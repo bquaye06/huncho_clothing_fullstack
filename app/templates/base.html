@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}HunchØ.clothing{% endblock %}</title>
+
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Loader styles commented out for now. Re-enable when restoring the page loader.
+       Original loader CSS was removed to simplify debugging and layout testing.
+       If you need the full loader styles back later, restore the previous block. */
+    /* Small button spinner used for forms (login/register) */
+    .btn-spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: rgba(255,255,255,0.95);
+      border-radius: 9999px;
+      animation: btn-spin 0.8s linear infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes btn-spin {
+      to { transform: rotate(360deg); }
+    }
+    /* Ensure password toggle icons render as blocks so vertical centering is consistent */
+    .pw-toggle svg { display: block; }
+    .pw-toggle { line-height: 1; }
+  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#E11D48',
+            dark: '#0F172A',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Preload critical resources -->
+  <link rel="preload" href="/static/images/logo_2.png" as="image">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="/static/images/logo_2.png" type="image/png" />
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col initial-load">
+  
+  <!-- Navbar: left links, centered logo, right actions -->
+  <header class="bg-white">
+    <div class="max-w-6xl mx-auto px-4 py-3 relative">
+      <div class="flex items-center justify-between">
+  <!-- Left links -->
+  <div class="hidden sm:flex items-center space-x-8 md:space-x-10 text-sm">
+          <a href="/shop" class="hover:text-primary">SHOP</a>
+          <a href="/info" class="hover:text-primary">INFO</a>
+        </div>
+
+        <!-- Center logo (absolute center to match reference) -->
+        <div class="absolute left-1/2 transform -translate-x-1/2">
+          <a href="/" class="inline-flex items-center gap-3">
+            <span class="hidden md:inline-block text-lg font-bold tracking-widest">HUNCHØ.clothing</span>
+          </a>
+        </div>
+
+  <!-- Right action icons -->
+  <div class="flex items-center space-x-6 md:space-x-8 text-sm">
+          <!-- Cart (icon only) -->
+          <a href="/cart" class="flex items-center gap-2 hover:text-primary" aria-label="Cart">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 5h12" />
+            </svg>
+          </a>
+
+          <!-- Search (icon only) - opens modal overlay -->
+          <a href="#" class="flex items-center gap-2 hover:text-primary" aria-label="Search" data-action="open-search">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+            </svg>
+          </a>
+
+          <!-- Wishlist (icon only) -->
+          <a href="/wishlist" class="flex items-center gap-2 hover:text-primary" aria-label="Wishlist">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.682 4.318 12.682a4.5 4.5 0 010-6.364z" />
+            </svg>
+          </a>
+
+          <!-- Sign in / account (will be replaced with icon when logged in) -->
+          <a id="nav-auth-link" href="/auth/login" class="text-sm hover:text-primary" aria-label="Sign in"> 
+            <span id="nav-auth-text">SIGN IN</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-grow flex items-center justify-center py-12 px-4">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col items-end"></div>
+
+  <!-- Cart side-drawer -->
+  <div id="cart-overlay" class="fixed inset-0 bg-black/40 z-40 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+  <aside id="cart-drawer" class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white z-50 transform translate-x-full shadow-lg transition-transform duration-400 ease-in-out overflow-auto">
+    <div class="flex items-center justify-between p-4 border-b">
+      <h3 class="text-lg font-semibold">Your Cart <span id="cart-count" class="text-sm text-gray-500">(0)</span></h3>
+      <button id="cartCloseBtn" aria-label="Close cart" class="text-gray-600 hover:text-gray-900">✕</button>
+    </div>
+    <div id="cartContent" class="p-4 min-h-[200px]"></div>
+    <div class="p-4 border-t">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-sm font-semibold">SUBTOTAL</div>
+        <div id="cartSubtotal" class="text-lg font-bold">GHS 0.00</div>
+      </div>
+      <div class="flex flex-col gap-3">
+        <a id="proceedCheckout" href="/checkout" class="block text-center bg-black text-white py-3 rounded">PROCEED TO CHECKOUT</a>
+        <button id="clearCartBtn" class="block border py-2 rounded">CLEAR CART</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Search modal (site-wide) -->
+  <div id="search-overlay" class="fixed inset-0 bg-black/40 z-50 opacity-0 pointer-events-none transition-opacity duration-200"></div>
+  <div id="search-modal" class="fixed left-1/2 top-16 transform -translate-x-1/2 z-50 w-full max-w-5xl opacity-0 pointer-events-none transition-all duration-200">
+    <div class="bg-white rounded-xl shadow-2xl overflow-hidden border">
+      <div class="flex items-center gap-3 px-4 py-3 border-b">
+        <div class="flex items-center gap-3 w-full">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+          <input id="search-modal-input" type="search" placeholder="Search products (e.g. hoodie, t-shirts, caps)" class="w-full p-3 text-lg outline-none" aria-label="Search products" />
+        </div>
+        <div class="flex items-center gap-4">
+          <button id="search-modal-action-clear" class="text-sm text-gray-500">Clear</button>
+          <button id="search-modal-close" class="ml-1 text-gray-400 hover:text-gray-600" aria-label="Close search">✕</button>
+        </div>
+      </div>
+      <div class="p-4">
+        <div id="search-modal-meta" class="text-sm text-gray-500 mb-4">Type to search products</div>
+        <div id="search-modal-results" class="space-y-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page loader commented out. Restorable block kept for future use. -->
+  <!-- Page loader: shows on navigation, form submit and refresh for a smooth transition -->
+  <div id="page-loader" class="fixed inset-0 z-[9999] bg-white/90 loader-backdrop flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300" aria-hidden="true" aria-live="polite" role="status" aria-label="Loading content">
+    <div class="flex flex-col items-center gap-4 loader-content">
+      <img src="/static/images/logo_2.png" alt="HunchØ.clothing" class="h-20 w-auto loader-logo" loading="eager" />
+      <div class="w-40 h-1 bg-gray-200 rounded overflow-hidden mt-2">
+        <div id="loader-bar" class="bg-primary h-full w-0 transition-all duration-700"></div>
+      </div>
+      <span class="sr-only">Loading, please wait...</span>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white text-dark mt-12 border-t">
+    <div class="max-w-6xl mx-auto px-6 py-12">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
+        <!-- Join / signup -->
+        <div>
+          <h3 class="text-xs font-semibold tracking-wider mb-4">JOIN</h3>
+          <div class="text-sm mb-4">ENROL NOW FOR EXCLUSIVE ACCESS</div>
+          <a href="/auth/register" class="inline-flex items-center gap-2 text-sm font-medium text-dark hover:text-primary">
+            <span class="mr-1">→</span> SIGN UP
+          </a>
+        </div>
+
+        <!-- Client services -->
+        <div>
+          <h3 class="text-xs font-semibold tracking-wider mb-4">CLIENT SERVICES</h3>
+          <ul class="space-y-3 text-sm text-gray-600">
+            <li><a href="/404" class="hover:text-dark">TRACK ORDER</a></li>
+            <li><a href="/404" class="hover:text-dark">LIVE CHAT <span class="inline-block ml-2 bg-red-500 rounded-full w-2 h-2 align-middle"></span></a></li>
+            <li><a href="/404" class="hover:text-dark">SUPPORT HUB</a></li>
+            <li><a href="/404" class="hover:text-dark">MAKE A RETURN</a></li>
+            <li><a href="/404" class="hover:text-dark">STORES</a></li>
+          </ul>
+        </div>
+
+        <!-- Company -->
+        <div>
+          <h3 class="text-xs font-semibold tracking-wider mb-4">COMPANY</h3>
+          <ul class="space-y-3 text-sm text-gray-600">
+            <li><a href="/404" class="hover:text-dark">ABOUT</a></li>
+            <li><a href="/404" class="hover:text-dark">FAQS</a></li>
+            <li><a href="/404" class="hover:text-dark">REVIEWS</a></li>
+            <li><a href="/404" class="hover:text-dark">SHIPPING</a></li>
+            <li><a href="/404" class="hover:text-dark">RETURNS</a></li>
+          </ul>
+        </div>
+
+        <!-- Social -->
+        <div>
+          <h3 class="text-xs font-semibold tracking-wider mb-4">SOCIAL</h3>
+          <ul class="space-y-3 text-sm text-gray-600">
+            <li><a href="https://www.instagram.com/benjamin_.quaye/" class="hover:text-dark">INSTAGRAM ↗</a></li>
+            <li><a href="https://www.tiktok.com/@theweeknd770" class="hover:text-dark">TIKTOK ↗</a></li>
+            <li><a href="https://x.com/plantainjustice" class="hover:text-dark">X ↗</a></li>
+          </ul>
+        </div>
+
+        <!-- Country / download -->
+        <div class="text-sm text-gray-600">
+          <h3 class="text-xs font-semibold tracking-wider mb-4">COUNTRY</h3>
+          <div class="mb-4">🇨🇭 CH / GHS | ENGLISH</div>
+          <h4 class="text-xs font-semibold tracking-wider mb-2">DOWNLOAD APP</h4>
+          <ul class="space-y-2">
+            <li class="text-gray-400">IOS ↗</li>
+            <li class="text-gray-400">ANDROID ↗</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- center developer credit -->
+      <div class="mt-10 text-center text-xs text-gray-500">DEVELOPED BY B.Quaye ↗</div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="border-t bg-white">
+      <div class="max-w-6xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-600">
+        <div class="w-full sm:w-auto text-left">&copy; {{ current_year or 2025 }} HunchØ.clothing</div>
+        <div class="w-full sm:w-auto mt-3 sm:mt-0 flex items-center justify-center sm:justify-end gap-6">
+          <a href="/terms" class="hover:text-dark">TERMS &amp; CONDITIONS</a>
+          <a href="/privacy" class="hover:text-dark">PRIVACY POLICY</a>
+        </div>
+      </div>
+    </div>
+  </footer> 
+
+  <script>
+    /* Page loader JavaScript commented out for now. Re-enable when restoring the loader.
+       The loader implementation (fetch interceptor, navigation interceptors, safety
+       timeouts, and exposed showLoader/hideLoader) has been removed to simplify
+       debugging and prevent interference while we iterate on UI. */
+
+    // Toast System - lightweight implementation
+    (function() {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      // create and show a toast
+      function createToast(message, type = 'info', opts = {}) {
+        const duration = typeof opts.duration === 'number' ? opts.duration : 4000;
+
+        const toast = document.createElement('div');
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        toast.className = 'max-w-sm w-full mb-3 flex items-start gap-3 p-3 rounded-md shadow-md transform transition-all duration-300 opacity-0 translate-y-2';
+
+        // color per type
+        const bg = (type === 'success') ? 'bg-green-50 border border-green-200' : (type === 'error') ? 'bg-red-50 border border-red-200' : 'bg-white border border-gray-200';
+        toast.className += ' ' + bg;
+
+        // icon
+        const icon = document.createElement('div');
+        icon.className = 'flex-shrink-0 mt-1';
+        if (type === 'success') {
+          icon.innerHTML = '<svg class="h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+        } else if (type === 'error') {
+          icon.innerHTML = '<svg class="h-5 w-5 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+        } else {
+          icon.innerHTML = '<svg class="h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"/></svg>';
+        }
+
+        const content = document.createElement('div');
+        content.className = 'text-sm text-gray-800';
+        content.textContent = message;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.setAttribute('aria-label', 'Dismiss notification');
+        closeBtn.className = 'ml-3 text-gray-400 hover:text-gray-600';
+        closeBtn.innerHTML = '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>';
+
+        closeBtn.addEventListener('click', () => removeToast(toast));
+
+        toast.appendChild(icon);
+        toast.appendChild(content);
+        toast.appendChild(closeBtn);
+
+        // insert at top
+        container.insertBefore(toast, container.firstChild);
+
+        // animate in
+        requestAnimationFrame(() => {
+          toast.classList.remove('opacity-0', 'translate-y-2');
+          toast.classList.add('opacity-100', 'translate-y-0');
+        });
+
+        const timeout = setTimeout(() => removeToast(toast), duration);
+
+        function removeToast(el) {
+          clearTimeout(timeout);
+          el.classList.add('opacity-0', 'translate-y-2');
+          setTimeout(() => { try { el.remove(); } catch(e){} }, 300);
+        }
+
+        return { remove: () => removeToast(toast) };
+      }
+
+      // expose a global helper
+      window.showToast = function(message, type = 'info', opts = {}) {
+        try { return createToast(message, type, opts); } catch(e) { console.error('showToast error', e); }
+      };
+    })();
+    
+    // Update navbar auth link when user is logged in (client-side detection)
+    (function(){
+      function renderAuthLink(){
+        const link = document.getElementById('nav-auth-link');
+        if (!link) return;
+  let token = null;
+  try { token = localStorage.getItem('access_token'); } catch(e) { /* ignore */ }
+        if (token) {
+          // show user icon and link to account
+          link.href = '/account';
+          link.setAttribute('aria-label', 'Account');
+          link.classList.remove('text-sm');
+          link.classList.add('inline-flex', 'items-center');
+          link.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 14c-4.418 0-8 1.79-8 4v1h16v-1c0-2.21-3.582-4-8-4z" />
+            </svg>
+          `;
+        } else {
+          // show sign in text
+          link.href = '/auth/login';
+          link.setAttribute('aria-label', 'Sign in');
+          link.classList.remove('inline-flex', 'items-center');
+          const span = document.createElement('span');
+          span.id = 'nav-auth-text';
+          span.textContent = 'SIGN IN';
+          link.innerHTML = '';
+          link.appendChild(span);
+        }
+      }
+
+      // initial render
+      renderAuthLink();
+
+      // update on storage events (other tabs) and when page becomes visible
+      window.addEventListener('storage', renderAuthLink);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) renderAuthLink(); });
+    })();
+
+    // Password toggle handler - toggles inputs when a .pw-toggle button is clicked
+    (function(){
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest && e.target.closest('.pw-toggle');
+        if (!btn) return;
+        const selector = btn.getAttribute('data-target');
+        if (!selector) return;
+        const input = document.querySelector(selector);
+        if (!input) return;
+        const isPwd = input.type === 'password';
+        input.type = isPwd ? 'text' : 'password';
+        btn.setAttribute('aria-label', isPwd ? 'Hide password' : 'Show password');
+        // swap icon: simple approach - replace innerHTML with alternate path
+        try {
+          if (isPwd) {
+            // change to eye-off (simple X) icon
+            btn.innerHTML = '<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.969 9.969 0 012.223-3.428M6.18 6.18A9.969 9.969 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.98 9.98 0 01-3.107 4.364M3 3l18 18"/></svg>';
+          } else {
+            btn.innerHTML = '<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>';
+          }
+        } catch (err) { /* ignore */ }
+      });
+    })();
+    
+    // Cart drawer behavior: open on cart icon click, fetch cart, render items, support update/remove
+    (function(){
+      const overlay = document.getElementById('cart-overlay');
+      const drawer = document.getElementById('cart-drawer');
+      const cartCloseBtn = document.getElementById('cartCloseBtn');
+      const cartContent = document.getElementById('cartContent');
+      const cartCount = document.getElementById('cart-count');
+      const cartSubtotal = document.getElementById('cartSubtotal');
+      const clearCartBtn = document.getElementById('clearCartBtn');
+
+      function openCart(){
+        overlay.classList.remove('opacity-0','pointer-events-none');
+        overlay.classList.add('opacity-100');
+        drawer.classList.remove('translate-x-full');
+        drawer.classList.add('translate-x-0');
+        // fetch and render
+        fetchCartAndRender();
+      }
+
+      function closeCart(){
+        overlay.classList.remove('opacity-100');
+        overlay.classList.add('opacity-0');
+        setTimeout(() => { overlay.classList.add('pointer-events-none'); }, 300);
+        drawer.classList.remove('translate-x-0');
+        drawer.classList.add('translate-x-full');
+      }
+
+      overlay.addEventListener('click', closeCart);
+      if (cartCloseBtn) cartCloseBtn.addEventListener('click', closeCart);
+
+      // Intercept clicks on cart links site-wide
+      document.addEventListener('click', (e) => {
+        const a = e.target.closest && e.target.closest('a[aria-label="Cart"]');
+        if (!a) return;
+        e.preventDefault();
+        openCart();
+      });
+
+      // Helpers to call API with token
+      function apiHeaders(){
+        const headers = { 'Content-Type': 'application/json' };
+        let token = null;
+        try { token = localStorage.getItem('access_token'); } catch(e){ token = null; }
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        return headers;
+      }
+
+      async function fetchCartAndRender(){
+        cartContent.innerHTML = '<div class="p-8 text-center text-gray-500">Loading...</div>';
+        try {
+          const res = await fetch('/cart/api/cart', { headers: apiHeaders() });
+          if (res.status === 401){
+            cartContent.innerHTML = '<div class="p-6">Please <a href="/auth/login" class="text-primary underline">sign in</a> to view your cart.</div>';
+            cartCount.textContent = '(0)';
+            cartSubtotal.textContent = 'GHS 0.00';
+            return;
+          }
+          const json = await res.json();
+          renderCart(json);
+        } catch (err){
+          console.error('fetchCart error', err);
+          cartContent.innerHTML = '<div class="p-6 text-red-500">Unable to load cart</div>';
+        }
+      }
+
+      function formatCurrency(v){ return 'GHS ' + (Number(v) || 0).toFixed(2); }
+
+      function renderCart(data){
+        const items = data.cart || [];
+        cartCount.textContent = `(${items.length})`;
+        cartSubtotal.textContent = formatCurrency(data.total || 0);
+        if (!items.length){
+          cartContent.innerHTML = '<div class="p-6 text-center text-gray-600">Your cart is empty.</div>';
+          return;
+        }
+        const list = document.createElement('div');
+        list.className = 'space-y-4';
+
+        items.forEach(it => {
+          const row = document.createElement('div');
+          row.className = 'flex items-start gap-3';
+
+          const thumb = document.createElement('div');
+          thumb.className = 'w-20 h-20 bg-gray-100 rounded flex items-center justify-center overflow-hidden border';
+          const img = document.createElement('img');
+          img.src = it.image || '/static/images/dress.webp';
+          img.alt = it.name || '';
+          img.className = 'w-full h-full object-contain';
+          thumb.appendChild(img);
+
+          const meta = document.createElement('div');
+          meta.className = 'flex-1';
+          meta.innerHTML = `<div class="text-sm font-semibold">${it.name}</div>
+                            <div class="text-xs text-gray-500">Qty: <span data-cart-item-qty="${it.cart_item_id}">${it.quantity}</span></div>
+                            <div class="text-sm mt-2">${formatCurrency(it.price)}</div>`;
+
+          const actions = document.createElement('div');
+          actions.className = 'flex flex-col items-end gap-2';
+          const minus = document.createElement('button'); minus.className = 'px-2'; minus.textContent = '−';
+          const plus = document.createElement('button'); plus.className = 'px-2'; plus.textContent = '+';
+          const del = document.createElement('button'); del.className = 'text-gray-400'; del.innerHTML = '🗑';
+
+          minus.addEventListener('click', () => updateQuantity(it.cart_item_id, it.quantity - 1));
+          plus.addEventListener('click', () => updateQuantity(it.cart_item_id, it.quantity + 1));
+          del.addEventListener('click', () => removeItem(it.cart_item_id));
+
+          actions.appendChild(minus); actions.appendChild(document.createTextNode(' ')); actions.appendChild(plus); actions.appendChild(del);
+
+          row.appendChild(thumb); row.appendChild(meta); row.appendChild(actions);
+          list.appendChild(row);
+        });
+
+        cartContent.innerHTML = '';
+        cartContent.appendChild(list);
+      }
+
+      async function updateQuantity(cart_item_id, quantity){
+        try {
+          const res = await fetch('/cart/api/cart/update', { method: 'PUT', headers: apiHeaders(), body: JSON.stringify({ cart_item_id, quantity }) });
+          if (!res.ok) throw new Error('update failed');
+          await fetchCartAndRender();
+        } catch (e){ console.error('updateQuantity', e); showToast('Failed to update quantity', 'error'); }
+      }
+
+      async function removeItem(cart_item_id){
+        try {
+          const res = await fetch(`/cart/api/cart/remove/${cart_item_id}`, { method: 'DELETE', headers: apiHeaders() });
+          if (!res.ok) throw new Error('remove failed');
+          await fetchCartAndRender();
+        } catch (e){ console.error('removeItem', e); showToast('Failed to remove item', 'error'); }
+      }
+
+      clearCartBtn && clearCartBtn.addEventListener('click', async (e) => {
+        // naive clear: remove each item
+        try{
+          const res = await fetch('/cart/api/cart', { headers: apiHeaders() });
+          if (!res.ok) throw new Error('failed');
+          const json = await res.json();
+          const items = json.cart || [];
+          for (const it of items){ await fetch(`/cart/api/cart/remove/${it.cart_item_id}`, { method: 'DELETE', headers: apiHeaders() }); }
+          await fetchCartAndRender();
+        }catch(err){ console.error('clearCart', err); showToast('Failed to clear cart', 'error'); }
+      });
+    })();
+    
+    // Search modal behavior - site-wide: open overlay, debounce queries to /shop/api/search and render
+    (function(){
+      const openEls = document.querySelectorAll('[data-action="open-search"]');
+      const overlay = document.getElementById('search-overlay');
+      const modal = document.getElementById('search-modal');
+  const input = document.getElementById('search-modal-input');
+  // support both possible clear button ids (legacy vs current)
+  const clearBtn = document.getElementById('search-modal-action-clear') || document.getElementById('search-modal-clear');
+      const closeBtn = document.getElementById('search-modal-close');
+      const resultsEl = document.getElementById('search-modal-results');
+      const meta = document.getElementById('search-modal-meta');
+
+      if (!overlay || !modal || !input) return;
+
+      function show(){
+        overlay.classList.remove('opacity-0','pointer-events-none');
+        overlay.classList.add('opacity-100');
+        modal.classList.remove('opacity-0','pointer-events-none','-translate-y-2');
+        modal.classList.add('opacity-100');
+        setTimeout(()=> input.focus(), 50);
+      }
+
+      function hide(){
+        overlay.classList.remove('opacity-100');
+        overlay.classList.add('opacity-0');
+        modal.classList.remove('opacity-100');
+        modal.classList.add('opacity-0');
+        setTimeout(()=>{ resultsEl && (resultsEl.innerHTML=''); meta && (meta.textContent='Type to search products'); }, 200);
+      }
+
+      openEls.forEach(el => el.addEventListener('click', (e)=>{ e.preventDefault(); show(); }));
+      overlay.addEventListener('click', hide);
+      closeBtn && closeBtn.addEventListener('click', hide);
+
+      function debounce(fn, ms){ let t = null; return function(...a){ if (t) clearTimeout(t); t = setTimeout(()=>fn.apply(this,a), ms); }; }
+
+      async function doSearch(q){
+        q = (q || '').trim();
+        if (!q){ meta.textContent = 'Type to search products'; resultsEl.innerHTML = ''; return; }
+        meta.textContent = `Searching for "${q}"...`;
+        try{
+          const res = await fetch(`/shop/api/search?q=${encodeURIComponent(q)}`);
+          if (!res.ok) throw new Error('search failed');
+          const items = await res.json();
+          render(items);
+        }catch(err){ console.error('search error', err); meta.textContent = 'Error searching products'; resultsEl.innerHTML = ''; }
+      }
+
+      function formatCurrency(v){ return 'GHS ' + (Number(v) || 0).toFixed(2); }
+
+      function render(items){
+        meta.textContent = `Products (${items.length})`;
+        if (!items.length){
+          resultsEl.innerHTML = '<div class="p-12 text-center text-gray-500">No products found</div>';
+          return;
+        }
+        resultsEl.innerHTML = '';
+        items.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'bg-white border rounded-lg p-4 flex items-start gap-4';
+
+          const thumbWrap = document.createElement('div');
+          thumbWrap.className = 'w-28 h-28 bg-gray-50 rounded overflow-hidden flex items-center justify-center border';
+          const img = document.createElement('img');
+          img.src = p.image_url || '/static/images/dress.webp';
+          img.alt = p.name || 'product';
+          img.className = 'w-full h-full object-contain';
+          thumbWrap.appendChild(img);
+
+          const metaDiv = document.createElement('div');
+          metaDiv.className = 'flex-1';
+          const title = document.createElement('div'); title.className = 'text-sm font-semibold text-gray-800'; title.textContent = p.name || '';
+          const desc = document.createElement('div'); desc.className = 'text-xs text-gray-500 mt-2'; desc.textContent = p.description || '';
+          const price = document.createElement('div'); price.className = 'text-lg font-bold mt-4'; price.textContent = formatCurrency(p.price);
+
+          metaDiv.appendChild(title); metaDiv.appendChild(desc); metaDiv.appendChild(price);
+
+          // clickable overlay link
+          const link = document.createElement('a');
+          link.href = '/shop/products/' + encodeURIComponent(p.name);
+          link.className = 'absolute inset-0';
+
+          const wrapper = document.createElement('div'); wrapper.className = 'relative';
+          wrapper.appendChild(card);
+          // assemble card
+          card.appendChild(thumbWrap);
+          card.appendChild(metaDiv);
+
+          // attach click by wrapping with anchor container
+          const outer = document.createElement('a');
+          outer.href = '/shop/products/' + encodeURIComponent(p.name);
+          outer.className = 'block';
+          outer.appendChild(wrapper);
+
+          resultsEl.appendChild(outer);
+        });
+      }
+
+      const deb = debounce((e)=> doSearch(e.target.value), 200);
+      input.addEventListener('input', deb);
+      clearBtn && clearBtn.addEventListener('click', ()=>{ input.value=''; input.focus(); doSearch(''); });
+      input.addEventListener('keydown', (e)=>{ if (e.key==='Escape') hide(); });
+    })();
+    
+    // Page loader: smooth transition when navigating or refreshing
+    (function(){
+      const loader = document.getElementById('page-loader');
+      const loaderBar = document.getElementById('loader-bar');
+      if (!loader) return;
+
+      // Auto-hide watchdog id (in case loader gets stuck)
+      let __loaderAutoHideTimer = null;
+
+      function showLoader(){
+        try{
+          // clear any previous auto-hide timer
+          try { if (__loaderAutoHideTimer) { clearTimeout(__loaderAutoHideTimer); __loaderAutoHideTimer = null; } } catch(e){}
+          loader.classList.remove('opacity-0','pointer-events-none');
+          loader.classList.add('opacity-100');
+          if (loaderBar) {
+            // start progress to 70%
+            loaderBar.style.width = '70%';
+          }
+
+          // safety: if the loader remains visible for >4s, force-hide it to avoid stuck state
+          __loaderAutoHideTimer = setTimeout(() => {
+            try { hideLoader(); } catch(e){}
+            try { __loaderAutoHideTimer = null; } catch(e){}
+          }, 4000);
+        }catch(e){}
+      }
+
+      function hideLoader(){
+        try{
+          // clear auto-hide timer when hiding intentionally
+          try { if (__loaderAutoHideTimer) { clearTimeout(__loaderAutoHideTimer); __loaderAutoHideTimer = null; } } catch(e){}
+          if (loaderBar) loaderBar.style.width = '100%';
+          setTimeout(()=>{
+            loader.classList.add('opacity-0','pointer-events-none');
+            if (loaderBar) loaderBar.style.width = '0%';
+          }, 250);
+        }catch(e){}
+      }
+
+      // Show loader when the user clicks a normal navigation link
+      document.addEventListener('click', (e) => {
+        const a = e.target.closest && e.target.closest('a');
+        if (!a) return;
+        // don't show loader for in-page anchors, javascript links, mailto, or external/new-tab links
+        const href = a.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') ) return;
+        if (a.target === '_blank' || a.rel === 'external') return;
+        // don't trigger for cart drawer anchor which is intercepted by site JS
+        if (a.getAttribute('aria-label') === 'Cart') return;
+        // if the link has data-no-loader, skip
+        if (a.dataset && a.dataset.noLoader) return;
+        showLoader();
+      });
+
+      // Show loader on form submit
+      document.addEventListener('submit', (e) => {
+        try{
+          // if the form has data-no-loader, don't show the full-page loader (useful for JS/AJAX forms)
+          const form = e.target && (e.target.closest ? e.target.closest('form') : null) || e.target;
+          if (form && form.dataset && form.dataset.noLoader) return;
+        }catch(_){}
+        showLoader();
+      });
+
+      // Show loader on page unload/refresh (covers F5, Ctrl+R, address bar refresh)
+      // Use a short debounce so very quick navigations/back actions don't leave the
+      // loader visible if the destination page restores/hides it immediately.
+      let __pageLoaderTimeout = null;
+      window.addEventListener('beforeunload', () => {
+        try { __pageLoaderTimeout = setTimeout(() => { showLoader(); }, 80); } catch(e){}
+      });
+
+      // Also hide on history navigation (popstate), pageshow and DOMContentLoaded.
+      // Clear any pending show timeout so the loader doesn't appear after navigation.
+      function __clearAndHideLoader(){
+        try { if (__pageLoaderTimeout) { clearTimeout(__pageLoaderTimeout); __pageLoaderTimeout = null; } } catch(e){}
+        try { hideLoader(); } catch(e){}
+      }
+
+  window.addEventListener('popstate', __clearAndHideLoader);
+  window.addEventListener('pageshow', __clearAndHideLoader);
+  document.addEventListener('DOMContentLoaded', __clearAndHideLoader);
+  // If page becomes visible (e.g. restored from bfcache), ensure loader is hidden
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) __clearAndHideLoader(); });
+
+  // Immediate safety call in case the loader is present due to previous navigation timing
+  try { __clearAndHideLoader(); } catch(e){}
+    })();
+  </script>
+</body>
+</html>

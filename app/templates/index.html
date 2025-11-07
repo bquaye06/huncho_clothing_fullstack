@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Home | HunchØ.clothing{% endblock %}
+{% block content %}
+
+<!-- HERO: Taller, more presentable hero with strong overlay and clear CTAs -->
+<section class="relative overflow-hidden min-h-[72vh] w-full">
+  <div class="absolute inset-0">
+    <style>
+      /* Hero background: cover and centered; fixed on large screens to sit 'at the back' */
+      .hero-bg {
+        background-position: center center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        filter: contrast(85%) brightness(60%);
+      }
+
+      /* Use a fixed background on desktop for the layered/back feeling (disabled on mobile) */
+      @media (min-width: 1024px) {
+        .hero-bg {
+          background-attachment: fixed;
+          background-position: center top;
+        }
+      }
+    </style>
+
+  <!-- full-bleed background: stretch to viewport width while keeping centered content -->
+  <div class="absolute left-1/2 transform -translate-x-1/2 w-screen h-full hero-bg" style="background-image: url('/static/images/hero.jpg');"></div>
+    <!-- stronger dark overlay for legibility -->
+    <div class="absolute inset-0 bg-black/55"></div>
+  </div>
+
+  <div class="relative z-10 max-w-6xl mx-auto px-6 py-36 flex flex-col items-center text-center hero-content">
+
+    <div class="flex justify-center w-full">
+      <a href="/shop" class="hero-cta inline-flex items-center gap-3 text-white text-lg font-medium tracking-widest">
+        <span class="cta-text uppercase">SHOP</span>
+        <span class="cta-arrow-wrapper ml-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="cta-arrow h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M13 5l7 7-7 7" />
+          </svg>
+        </span>
+      </a>
+    </div>
+  </div>
+  <style>
+    /* Hero CTA styling close to provided reference image */
+    .hero-cta { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; letter-spacing: .35em; text-decoration: none; }
+    .hero-cta .cta-text { display: inline-block; font-size: 1.05rem; letter-spacing: .35em; transition: color .18s ease, transform .18s ease; }
+    .hero-cta .cta-arrow { display: inline-block; transition: transform .22s cubic-bezier(.2,.9,.2,1), opacity .18s ease; }
+    .hero-cta:hover .cta-text { transform: translateX(-2px); color: #fff; }
+    .hero-cta:hover .cta-arrow { transform: translateX(6px); }
+    /* slightly increase hit area */
+    .hero-cta { padding: 6px 10px; }
+  </style>
+  </section>
+
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Signing you in…{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto p-8 text-center">
+  <h2 class="text-xl font-semibold">Signing you in…</h2>
+  <p class="mt-4">You will be redirected shortly. If your browser does not redirect automatically, click continue.</p>
+  <button id="continueBtn" class="mt-6 bg-primary text-white px-4 py-2 rounded">Continue</button>
+</div>
+
+<script>
+(function(){
+  try {
+    const access = {{ access_token|tojson }};
+    const refresh = {{ refresh_token|tojson }};
+    const isAdmin = {{ is_admin|tojson }};
+    try { localStorage.setItem('access_token', access); } catch(e) { console.warn('localStorage set failed', e); }
+    try { localStorage.setItem('refresh_token', refresh); } catch(e) { }
+    if (isAdmin) {
+      try { localStorage.setItem('admin_token', access); } catch(e) { }
+    }
+  } catch (e) {
+    console.warn('Failed to persist tokens', e);
+  }
+  const dest = (window.localStorage && window.localStorage.getItem('post_oauth_redirect')) || (isAdmin ? '/admin/dashboard' : '/');
+  // small delay so user sees message
+  setTimeout(()=> window.location.replace(dest), 900);
+  document.getElementById('continueBtn').addEventListener('click', ()=> window.location.replace(dest));
+})();
+</script>
+{% endblock %}

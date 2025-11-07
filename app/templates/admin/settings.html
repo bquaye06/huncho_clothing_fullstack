@@ -1,0 +1,169 @@
+{% extends 'admin/base.html' %}
+{% block title %}Settings | Admin{% endblock %}
+{% block content %}
+
+<section class="max-w-4xl mx-auto px-6 py-12">
+  <h1 class="text-3xl font-bold text-gray-800 mb-8">System Settings</h1>
+  <!-- General -->
+  <div class="bg-white rounded-xl shadow p-6 mb-8">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <h2 class="text-xl font-semibold">General Settings</h2>
+        <p class="text-sm text-gray-500">Core site settings and maintenance controls.</p>
+      </div>
+    </div>
+    <form id="settingsForm" class="grid grid-cols-1 md:grid-cols-2 gap-6" autocomplete="off" novalidate>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Site Name</label>
+        <input type="text" id="site_name" name="site_name" class="w-full p-3 border rounded-lg" value="{{ settings.get('site_name', '') }}" required>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Support Email</label>
+  <input type="email" id="support_email" name="support_email" class="w-full p-3 border rounded-lg" value="hunchoc04@gmail.com" required>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Currency</label>
+        <input type="text" id="currency" name="currency" class="w-full p-3 border rounded-lg" value="{{ settings.get('currency', 'GHS') }}">
+      </div>
+      <div class="flex items-center space-x-2 mt-4">
+        <input type="checkbox" id="maintenance_mode" name="maintenance_mode" class="form-checkbox h-5 w-5 text-admin rounded" {% if settings.get('maintenance_mode') == 'true' %}checked{% endif %}>
+        <label for="maintenance_mode" class="text-gray-600">Enable Maintenance Mode</label>
+      </div>
+    </form>
+  </div>
+
+  <!-- Payment -->
+  <div class="bg-white rounded-xl shadow p-6 mb-8">
+    <h2 class="text-xl font-semibold mb-4">Payment Settings (Paystack)</h2>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Public Key</label>
+        <div class="flex gap-2">
+          <input type="text" id="PAYSTACK_PUBLIC_KEY" class="flex-1 p-3 border rounded-lg" value="pk_live_ae495821350d1953ba37d3e1511d5326fc2cca81">
+          <button type="button" id="copyPublicKey" class="px-3 py-2 bg-gray-100 rounded-lg text-sm">Copy</button>
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Secret Key</label>
+        <div class="flex gap-2">
+          <input type="password" id="PAYSTACK_SECRET_KEY" class="flex-1 p-3 border rounded-lg" value="sk_live_be5d22fd3edbe90f77fb622c74bb48a143a39d08" aria-describedby="secretHelp">
+          <button type="button" id="toggleSecret" class="px-3 py-2 bg-gray-100 rounded-lg text-sm">Show</button>
+        </div>
+        <p id="secretHelp" class="text-xs text-gray-400 mt-1">Secret keys are masked for safety. Only reveal when needed.</p>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Base URL</label>
+  <input type="text" id="PAYSTACK_BASE_URL" class="w-full p-3 border rounded-lg" value="https://api.paystack.co">
+      </div>
+    </div>
+  </div>
+
+  <!-- Mail -->
+  <div class="bg-white rounded-xl shadow p-6 mb-8">
+    <h2 class="text-xl font-semibold mb-4">Mail & Notifications</h2>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Mail Server</label>
+  <input type="text" id="MAIL_SERVER" class="w-full p-3 border rounded-lg" value="smtp.gmail.com">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Mail Username</label>
+  <input type="text" id="MAIL_USERNAME" class="w-full p-3 border rounded-lg" value="hunchoc04@gmail.com">
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex-1">
+          <label class="block text-sm text-gray-600 mb-1">SMS Provider</label>
+          <input type="text" id="sms_provider" class="w-full p-3 border rounded-lg" value="Arkesel">
+        </div>
+        <div class="w-1/2">
+          <label class="block text-sm text-gray-600 mb-1">SMS API Key</label>
+          <input type="text" id="sms_api_key" class="w-full p-3 border rounded-lg" value="c0tIZE1nTlRXWk5aUWZyQkhyYVc">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Button -->
+  <div class="text-right">
+    <button id="saveSettingsBtn" class="inline-flex items-center gap-3 bg-admin text-white px-6 py-3 rounded-lg hover:opacity-95 transition disabled:opacity-50" type="button">
+      <svg id="saveSpinner" class="hidden animate-spin h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+      <span id="saveLabel">Save Settings</span>
+    </button>
+  </div>
+</section>
+
+<script>
+const token = localStorage.getItem('admin_token') || localStorage.getItem('access_token');
+
+function apiFetch(url, opts){
+  opts = Object.assign({}, opts || {});
+  opts.credentials = opts.credentials || 'same-origin';
+  opts.headers = Object.assign({}, opts.headers || {});
+  if (token && !opts.headers.Authorization){ opts.headers['Authorization'] = 'Bearer ' + token; }
+  return fetch(url, opts);
+}
+
+function showToast(msg, type='info'){
+  if (window.showAdminToast) return window.showAdminToast(msg, type);
+  if (window.showAdminNotification) return window.showAdminNotification(msg, type);
+  alert(msg);
+}
+
+document.getElementById('copyPublicKey')?.addEventListener('click', ()=>{
+  const v = document.getElementById('PAYSTACK_PUBLIC_KEY').value || '';
+  navigator.clipboard?.writeText(v).then(()=> showToast('Public key copied', 'success')).catch(()=> showToast('Copy failed', 'error'));
+});
+
+document.getElementById('toggleSecret')?.addEventListener('click', (e)=>{
+  const input = document.getElementById('PAYSTACK_SECRET_KEY');
+  if (!input) return;
+  if (input.type === 'password'){ input.type = 'text'; e.currentTarget.textContent = 'Hide'; }
+  else { input.type = 'password'; e.currentTarget.textContent = 'Show'; }
+});
+
+document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('saveSettingsBtn');
+  const spinner = document.getElementById('saveSpinner');
+  const label = document.getElementById('saveLabel');
+
+  // basic validation
+  const supportEmail = document.getElementById('support_email').value.trim();
+  if (supportEmail && !/^\S+@\S+\.\S+$/.test(supportEmail)){
+    showToast('Please enter a valid support email', 'error');
+    return;
+  }
+
+  const payload = {
+    site_name: document.getElementById('site_name').value.trim(),
+    support_email: supportEmail,
+    currency: document.getElementById('currency').value.trim(),
+    maintenance_mode: document.getElementById('maintenance_mode').checked ? 'true' : 'false',
+    PAYSTACK_PUBLIC_KEY: document.getElementById('PAYSTACK_PUBLIC_KEY').value.trim(),
+    PAYSTACK_SECRET_KEY: document.getElementById('PAYSTACK_SECRET_KEY').value.trim(),
+    PAYSTACK_BASE_URL: document.getElementById('PAYSTACK_BASE_URL').value.trim(),
+    MAIL_SERVER: document.getElementById('MAIL_SERVER').value.trim(),
+    MAIL_USERNAME: document.getElementById('MAIL_USERNAME').value.trim(),
+    sms_provider: document.getElementById('sms_provider').value.trim(),
+    sms_api_key: document.getElementById('sms_api_key').value.trim(),
+  };
+
+  try{
+    btn.disabled = true; spinner.classList.remove('hidden'); label.textContent = 'Saving…';
+    const res = await apiFetch('/admin/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(()=>({ message: res.statusText }));
+    if (!res.ok) throw new Error(data.message || 'Save failed');
+    showToast(data.message || 'Settings saved', 'success');
+  }catch(err){
+    console.error(err);
+    showToast(err.message || 'Failed to save settings', 'error');
+  }finally{
+    btn.disabled = false; spinner.classList.add('hidden'); label.textContent = 'Save Settings';
+  }
+});
+</script>
+
+{% endblock %}

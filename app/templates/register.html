@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block title %}Register | HunchØ.clothing{% endblock %}
+{% block content %}
+
+<!-- Split layout: visual panel on left, form on right -->
+<div class="w-full max-w-6xl bg-transparent shadow-none rounded-lg p-4">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+
+    <!-- Left visual / promo -->
+    <div class="hidden lg:flex rounded-lg overflow-hidden bg-cover bg-center" style="background: linear-gradient(135deg, rgba(225,29,72,0.9), rgba(15,23,42,0.9)), url('/app/static/images/logo_2.png'); background-size: cover; background-position: center;">
+      <div class="p-12 text-white flex flex-col justify-center gap-4">
+        <h1 class="text-4xl font-extrabold leading-tight">Welcome to HunchØ.clothing</h1>
+        <p class="opacity-90 max-w-md">Discover clean, contemporary clothing made for everyday life. Create an account to start shopping, track orders and receive exclusive offers.</p>
+        <a href="/shop" class="mt-4 inline-block bg-white text-dark px-4 py-2 rounded font-medium hover:opacity-90">Shop now</a>
+      </div>
+    </div>
+
+    <!-- Right: registration card -->
+    <div class="bg-white rounded-lg shadow-md p-8">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h2 class="text-2xl font-semibold text-dark">Create your account</h2>
+          <p class="text-sm text-gray-500">Fast, secure signup — join the community.</p>
+        </div>
+        <img src="/static/images/logo_2.png" alt="logo" class="h-10 w-auto">
+      </div>
+
+      <form id="registerForm" class="space-y-4">
+        <!-- Name fields: first, middle, last -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">First name</label>
+            <input id="first_name" name="first_name" type="text" placeholder="First name" class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Middle name</label>
+            <input id="middle_name" name="middle_name" type="text" placeholder="Middle name" class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Last name</label>
+            <input id="last_name" name="last_name" type="text" placeholder="Last name" class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Username</label>
+            <input id="username" name="username" type="text" placeholder="e.g. johndoe" class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" required>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Phone</label>
+            <input id="phone_number" name="phone_number" type="tel" placeholder="+233 20 123 4567" class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" required>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Email</label>
+          <input id="email" name="email" type="email" placeholder="you@example.com" class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary" required>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="relative">
+            <label class="block text-sm font-medium mb-1">Password</label>
+            <input id="password" name="password" type="password" placeholder="Create a strong password" class="w-full border rounded-md px-3 py-3 pr-14 focus:outline-none focus:ring-2 focus:ring-primary" required>
+              <button type="button" class="pw-toggle absolute inset-y-0 right-2 flex items-center px-3 text-gray-500 h-full" aria-label="Show password" data-target="#password">
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Date of birth</label>
+            <input id="date_of_birth" name="date_of_birth" type="date" class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Country</label>
+          <select id="country" name="country" class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="">Select your country</option>
+            <option value="Ghana">Ghana</option>
+            <option value="Nigeria">Nigeria</option>
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="United States">United States</option>
+            <option value="Canada">Canada</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="flex items-center text-sm">
+          <input id="terms" type="checkbox" class="mr-2" required>
+          <label for="terms">I agree to the <a href="#" class="text-primary underline">Terms &amp; Conditions</a></label>
+        </div>
+
+        <button type="submit" class="w-full bg-primary text-white py-3 rounded-md hover:bg-red-600 transition">Create account</button>
+
+        <p class="text-center text-sm mt-2">Already have an account? <a href="/auth/login" class="text-primary hover:underline">Log in</a></p>
+
+        <p id="message" class="text-center mt-2 text-sm"></p>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  // show processing toast
+  if (window.showToast) showToast('Processing...', 'info', {duration: 2000});
+
+  const data = {
+    first_name: document.getElementById('first_name').value,
+    middle_name: document.getElementById('middle_name').value,
+    last_name: document.getElementById('last_name').value,
+    username: document.getElementById('username').value,
+    email: document.getElementById('email').value,
+    password: document.getElementById('password').value,
+    phone_number: document.getElementById('phone_number').value,
+    date_of_birth: document.getElementById('date_of_birth').value,
+    country: document.getElementById('country').value
+  };
+
+  try {
+    // show spinner on submit button
+    const btn = document.querySelector('#registerForm button[type="submit"]');
+    const showButtonSpinner = (b) => {
+      if (!b) return;
+      b.disabled = true;
+      b.dataset._orig = b.innerHTML;
+      b.insertAdjacentHTML('afterbegin', '<span class="btn-spinner mr-2" aria-hidden="true"></span>');
+    };
+    const hideButtonSpinner = (b) => {
+      if (!b) return;
+      b.disabled = false;
+      const s = b.querySelector('.btn-spinner'); if (s) s.remove();
+      if (b.dataset._orig) { b.innerHTML = b.dataset._orig; delete b.dataset._orig; }
+    };
+    showButtonSpinner(btn);
+
+    // POST to the current path so this template works under the /auth blueprint
+    const res = await fetch(window.location.pathname, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (res.status === 201) {
+      // show success toast and navigate to verify page
+  if (window.showToast) showToast(result.message || 'Registered successfully. Please verify.', 'success');
+  // navigate to OTP verification and prefill email so the user doesn't have to re-enter it
+  const regEmail = (document.getElementById('email').value || '');
+  try{ localStorage.setItem('prefill_email', regEmail); }catch(e){}
+  const encoded = encodeURIComponent(regEmail);
+  setTimeout(()=> { window.location.href = `/auth/verify-otp?email=${encoded}`; }, 800);
+    } else {
+      if (window.showToast) showToast(result.message || result.error || '', 'error');
+    }
+  } catch (err) {
+    if (window.showToast) showToast('Something went wrong. Please try again.', 'error');
+  }
+  finally {
+    const btn = document.querySelector('#registerForm button[type="submit"]');
+    if (btn) {
+      const s = btn.querySelector('.btn-spinner'); if (s) s.remove();
+      if (btn.dataset._orig) { btn.innerHTML = btn.dataset._orig; delete btn.dataset._orig; }
+      btn.disabled = false;
+    }
+  }
+});
+</script>
+
+{% endblock %}

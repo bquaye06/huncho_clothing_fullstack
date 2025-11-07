@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}HunchØ.clothing | Wishlist{% endblock %}
+{% block content %}
+
+<section class="min-h-[70vh] py-12">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-center text-sm tracking-widest text-gray-600 mb-4" id="wishlistHeader">WISHLIST</h2>
+
+    <div id="wishlistContainer"></div>
+
+    <div class="mt-12 text-center">
+      <a href="/shop" class="inline-block border border-gray-200 rounded px-6 py-2 text-sm">CONTINUE SHOPPING</a>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Render wishlist from localStorage with a layout similar to the provided screenshot
+  function renderEmpty(){
+    return `
+      <div class="min-h-[40vh] flex items-center justify-center">
+        <div class="text-center max-w-xl py-24 px-6">
+          <div class="mx-auto w-24 h-24 rounded-full border border-gray-200 flex items-center justify-center mb-6">
+            <svg class="h-12 w-12 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.682 4.318 12.682a4.5 4.5 0 010-6.364z" />
+            </svg>
+          </div>
+          <h3 class="text-sm tracking-wider text-gray-600">YOUR WISHLIST IS EMPTY</h3>
+          <p class="mt-3 text-xs text-gray-400">SAVE ITEMS YOU LOVE</p>
+        </div>
+      </div>
+    `;
+  }
+
+  function formatPrice(p){
+    const n = Number(p || 0);
+    return `₵${n.toFixed(2)}`;
+  }
+
+  function renderList(items){
+    const count = (items && items.length) || 0;
+    document.getElementById('wishlistHeader').textContent = `WISHLIST (${count})`;
+    if (!items || !items.length) return renderEmpty();
+
+    const rows = items.map(it => {
+      const name = (it.name || '').toUpperCase();
+      const image = it.image || '/static/images/dress.webp';
+      const price = formatPrice(it.price);
+      const oldPrice = it.old_price ? formatPrice(it.old_price) : '';
+
+      return `
+        <div class="grid grid-cols-12 gap-8 items-start mb-12">
+          <div class="col-span-4">
+            <a href="/shop/products/${it.name}" aria-label="View ${ (it.name||'').replace(/"/g,'') }">
+              <img src="${image}" alt="${(it.name||'').replace(/"/g,'')}" class="w-full max-w-[360px] object-contain">
+            </a>
+          </div>
+          <div class="col-span-8">
+            <div class="text-sm uppercase tracking-wide text-gray-600 mb-4">
+              <a href="/shop/${it.name}" class="hover:underline">${name}</a>
+            </div>
+            <div class="mb-4">
+              <span class="text-red-600 font-medium">${price}</span>
+              ${ oldPrice ? `<span class="text-gray-400 line-through ml-3 text-sm">${oldPrice}</span>` : '' }
+            </div>
+            <div class="text-xs text-gray-500 mb-6">✕ <button class="remove-item underline text-gray-700" data-id="${it.product_id}">REMOVE</button></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `<div>${rows}</div>`;
+  }
+
+  function loadWishlist(){
+    let raw = null; try { raw = localStorage.getItem('wishlist'); } catch(e) { raw = null; }
+    let list = [];
+    try { list = raw ? JSON.parse(raw) : []; } catch(e){ list = []; }
+    const container = document.getElementById('wishlistContainer');
+    if (!container) return;
+    container.innerHTML = renderList(list);
+
+    // wire remove buttons
+    container.querySelectorAll('.remove-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = btn.dataset.id;
+        // Support older entries that may have used name as identifier: remove when either product_id or name matches
+        const newList = list.filter(i => String(i.product_id) !== String(id) && String(i.name) !== String(id));
+        try { localStorage.setItem('wishlist', JSON.stringify(newList)); } catch(e){}
+        loadWishlist();
+        if (window.showToast) window.showToast('Removed from wishlist', 'info');
+      });
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', loadWishlist);
+</script>
+
+{% endblock %}

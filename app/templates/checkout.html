@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+{% block title %}HunchØ.clothing | checkout{% endblock %}
+{% block content %}
+
+<section class="max-w-7xl mx-auto px-6 py-12">
+  <h1 class="text-3xl font-bold text-center mb-8">Checkout</h1>
+
+  <div class="bg-white p-4 rounded-xl shadow-sm mb-6 text-xs text-gray-500">
+    Note: Changes made here are temporary for this order. To permanently update your profile details, please visit your profile settings.
+  </div>
+
+  <div id="checkoutContainer" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- LEFT: Forms -->
+    <div class="lg:col-span-2 space-y-6">
+      <!-- Contact -->
+      <div class="bg-white p-6 rounded-xl shadow">
+        <h2 class="text-lg font-semibold mb-4">Contact</h2>
+        <form id="checkoutForm" class="space-y-6">
+          <div>
+            <label class="text-xs text-primary block mb-1 font-medium">Email</label>
+            <input type="email" id="email" name="email" value="{{ user.email if user else '' }}" class="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" / disabled>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" id="newsletter" name="newsletter" class="mr-2" />
+            <label class="text-xs text-gray-500">Email me with news and offers</label>
+          </div>
+        </form>
+      </div>
+
+      <!-- Delivery -->
+      <div class="bg-white p-6 rounded-xl shadow">
+        <h2 class="text-lg font-semibold mb-4">Delivery</h2>
+        <form id="deliveryForm" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs text-primary block mb-1 font-medium">First name</label>
+              <input type="text" id="first_name" name="first_name" value="{{ user.first_name if user else '' }}" class="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+            <div>
+              <label class="text-xs text-primary block mb-1 font-medium">Last name</label>
+              <input type="text" id="last_name" name="last_name" value="{{ user.last_name if user else '' }}" class="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-xs text-primary block mb-1 font-medium">Country</label>
+              <input type="text" id="country" name="country" value="{{ user.country if user else '' }}" class="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 block mb-1">City</label>
+              <select id="city" name="city" class="w-full p-3 border rounded-lg">
+                <option value="">Select city</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs text-gray-500 block mb-1">Address</label>
+            <input type="text" id="address" name="address" placeholder="Street address, building, apt, etc." class="w-full p-3 border rounded-lg" />
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-1">
+              <label class="text-xs text-gray-500 block mb-1">Country code</label>
+              <select id="phone_country" name="phone_country" class="w-full p-3 border rounded-lg">
+                <option value="+233">Ghana (+233)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 block mb-1">Phone number</label>
+              <input type="tel" id="phone" name="phone" placeholder="712345678" class="w-full p-3 border rounded-lg" />
+            </div>
+          </div>
+
+          <div class="flex items-center">
+            <input type="checkbox" id="save_address" name="save_address" class="mr-2" />
+            <label class="text-xs text-gray-500">Save this address for future purchases</label>
+          </div>
+        </form>
+      </div>
+
+      <!-- Shipping Method -->
+      <div class="bg-white p-6 rounded-xl shadow">
+        <h3 class="text-lg font-semibold mb-3">Shipping method</h3>
+        <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg mb-4 text-xs text-amber-800">
+          Complete your address to see shipping options
+        </div>
+        <select id="shippingMethod" class="w-full p-3 border rounded-lg" disabled>
+          <option value="">Select shipping method</option>
+          <option value="standard">Standard shipping — 3–5 business days</option>
+          <option value="express">Express shipping — 1–2 business days</option>
+        </select>
+        <p class="text-xs text-gray-500 mt-2">Delivery times are estimates and may vary based on location</p>
+      </div>
+
+      <!-- Order Notes -->
+      <div class="bg-white p-6 rounded-xl shadow">
+        <h3 class="text-lg font-semibold mb-3">Order notes</h3>
+        <div>
+          <label class="text-xs text-gray-500 block mb-1">Special instructions (optional)</label>
+          <textarea id="order_notes" name="order_notes" placeholder="Add any special delivery instructions or notes for your order..." rows="3" class="w-full p-3 border rounded-lg"></textarea>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">Any special requests or delivery instructions</p>
+      </div>
+    </div>
+
+    <!-- RIGHT: Order Summary -->
+    <aside class="lg:col-span-1">
+      <div class="bg-white p-6 rounded-xl shadow sticky top-6">
+        <h2 class="text-lg font-semibold mb-4">Order summary</h2>
+        <div id="cartSummary">
+          <ul id="cartItems" class="space-y-3 mb-4"></ul>
+          <div class="mb-4">
+            <label class="text-xs text-gray-500 block mb-1">Enter promo code</label>
+            <input type="text" id="promo_code" name="promo_code" placeholder="Promo code" class="w-full p-3 border rounded-lg" disabled>
+          </div>
+          <div class="flex items-center justify-between border-t pt-3">
+            <div class="text-sm text-primary font-medium">Subtotal</div>
+            <div class="font-semibold">₵<span id="subtotalPrice">0.00</span></div>
+          </div>
+          <div class="flex items-center justify-between border-t pt-3 mt-2">
+            <div class="text-sm text-primary font-medium">Total</div>
+            <div class="font-semibold">₵<span id="totalPrice">0.00</span></div>
+          </div>
+          <div class="mt-6">
+            <button id="proceedPay" class="w-full bg-primary text-white py-3 rounded-lg hover:opacity-95 text-sm font-medium">PAY ₵<span id="payAmount">0.00</span></button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+// helper to read the current auth token from storage at call-time (avoid stale captured value)
+function getAuthToken(){
+  // Prefer the standard user access token first so cart APIs and checkout
+  // consistently use the same identity as the cart drawer (which uses
+  // localStorage.access_token). Fall back to admin_token or legacy token.
+  try{
+    return localStorage.getItem('access_token') || localStorage.getItem('admin_token') || localStorage.getItem('token');
+  }catch(e){ return null; }
+}
+
+async function loadCartSummary() {
+  const token = getAuthToken();
+  if (!token) {
+    document.getElementById("checkoutContainer").innerHTML =
+      "<p class='text-center text-gray-500'>Please login to proceed to checkout.</p>";
+    return;
+  }
+
+  const res = await fetch("/cart/api/cart", {
+    headers: { "Authorization": "Bearer " + token }
+  });
+  if (res.status === 401) {
+    // token missing/expired — remove stored token and prompt to sign in
+    try { localStorage.removeItem('access_token'); } catch (e) {}
+    document.getElementById("checkoutContainer").innerHTML =
+      "<div class='text-center text-gray-600'>Please <a href='/auth/login' class='text-primary underline'>sign in</a> to proceed to checkout.</div>";
+    return;
+  }
+  if (!res.ok) {
+    document.getElementById("checkoutContainer").innerHTML = "<p class='text-center text-gray-500'>Unable to load cart.</p>";
+    return;
+  }
+  const data = await res.json();
+
+  const itemsList = document.getElementById("cartItems");
+  const subtotalPriceEl = document.getElementById("subtotalPrice");
+  const totalPriceEl = document.getElementById("totalPrice");
+  const payAmountEl = document.getElementById("payAmount");
+
+  if (!data.cart || data.cart.length === 0) {
+    document.getElementById("checkoutContainer").innerHTML =
+      "<p class='text-center text-gray-500'>Your cart is empty.</p>";
+    return;
+  }
+
+  itemsList.innerHTML = data.cart.map(item => `
+    <li class="flex items-center justify-between text-gray-700">
+      <div class="flex items-center gap-3">
+        <img src="${item.image || '/static/images/dress.webp'}" alt="${item.name}" class="w-12 h-12 object-contain rounded"/>
+        <div class="text-sm">
+          <div class="font-medium">${item.name}</div>
+          <div class="text-xs text-gray-500">Qty: ${item.quantity}</div>
+        </div>
+      </div>
+      <div class="text-sm">₵${item.subtotal.toFixed(2)}</div>
+    </li>
+  `).join("");
+
+  // compute subtotal from items (safe fallback if API doesn't provide subtotal)
+  const subtotal = (data.cart || []).reduce((acc, it) => acc + (it.subtotal || 0), 0).toFixed(2);
+  if (subtotalPriceEl) subtotalPriceEl.textContent = subtotal;
+
+  const total = (typeof data.total !== 'undefined') ? Number(data.total).toFixed(2) : subtotal;
+  if (totalPriceEl) totalPriceEl.textContent = total;
+  if (payAmountEl) payAmountEl.textContent = total;
+}
+
+document.getElementById("checkoutForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const token = getAuthToken();
+  if (!token) return window.location = '/auth/login';
+
+  const res = await fetch("/checkout/api/checkout/initiate", {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + token }
+  });
+
+  const data = await res.json();
+  if (data.authorization_url) {
+    window.location.href = data.authorization_url;
+  } else {
+    window.showToast ? window.showToast('Payment initialization failed', 'error') : alert("Payment initialization failed!");
+  }
+});
+
+// quick hook for the right-side button
+document.getElementById('proceedPay').addEventListener('click', () => {
+  // Collect data from all forms if needed; for now, trigger main form submit
+  document.getElementById('checkoutForm').requestSubmit();
+});
+
+// list of major cities (Ghana) to populate the city select — adjust as needed
+const CITIES = [
+  'Accra','Kumasi','Tamale','Sekondi-Takoradi','Tema','Cape Coast','Koforidua','Sunyani','Ho','Wa','Bolgatanga','Techiman','Obuasi','Bawku','Bibiani','Kpando','Axim','Sefwi-Wiawso'
+];
+
+function populateCities(selected) {
+  const cityEl = document.getElementById('city');
+  if (!cityEl) return;
+  // clear existing options
+  cityEl.innerHTML = '<option value="">Select city</option>' + CITIES.map(c => `\n    <option value="${c}">${c}</option>`).join('');
+  if (selected) {
+    const opt = Array.from(cityEl.options).find(o => o.value.toLowerCase() === (selected||'').toLowerCase());
+    if (opt) opt.selected = true;
+  }
+}
+
+// Prefill user info from API when token is available
+async function prefillUserInfo(jwtToken) {
+  if (!jwtToken) return;
+  try {
+    console.debug('prefillUserInfo: token present (masked)', jwtToken ? (jwtToken.slice(0,6) + '...len:' + jwtToken.length) : 'none');
+    const res = await fetch('/account/user/profile', {
+      headers: { 'Authorization': 'Bearer ' + jwtToken }
+    });
+    console.debug('prefillUserInfo: /account/user/profile status', res.status, 'ok=', res.ok);
+    if (res.status === 401) {
+      console.debug('prefillUserInfo: token unauthorized — removing stored token');
+      try { localStorage.removeItem('access_token'); } catch(e){}
+      try { localStorage.removeItem('admin_token'); } catch(e){}
+      return;
+    }
+    if (!res.ok) {
+      console.debug('prefillUserInfo: unexpected response, aborting');
+      return; // silently fail
+    }
+    const data = await res.json();
+    console.debug('prefillUserInfo: response JSON', data);
+
+    // fill fields if present and empty
+    const emailEl = document.getElementById('email');
+    const firstEl = document.getElementById('first_name');
+    const lastEl = document.getElementById('last_name');
+    const countryEl = document.getElementById('country');
+    const phoneEl = document.getElementById('phone');
+
+  // set values from API (overwrite current values so client-side always reflects server data)
+  if (emailEl) emailEl.value = data.email || '';
+  if (firstEl) firstEl.value = data.first_name || '';
+  if (lastEl) lastEl.value = data.last_name || '';
+  if (countryEl) countryEl.value = data.country || '';
+  if (phoneEl) phoneEl.value = data.phone_number || '';
+  console.debug('prefillUserInfo: got user', data);
+    // if user returned a city, try to select it
+    if (data.city) {
+      populateCities(data.city);
+    }
+  } catch (err) {
+    // no-op on error
+    console.debug('prefillUserInfo failed', err);
+  }
+}
+
+// call both prefill and cart load when DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  // populate city list first (select will be set by prefill if server returns city)
+  populateCities();
+  // read token fresh when prefilling
+  prefillUserInfo(getAuthToken());
+  loadCartSummary();
+});
+
+// If token changes in another tab (or via an auth flow), refresh prefill and cart
+window.addEventListener('storage', (e) => {
+  if (!e) return;
+  const keys = ['access_token','admin_token','token'];
+  if (keys.includes(e.key)){
+    // small debounce to avoid double calls
+    try { setTimeout(() => { prefillUserInfo(getAuthToken()); loadCartSummary(); }, 120); } catch(e){}
+  }
+});
+
+// When tab becomes visible, ensure cart reflects current auth state
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { prefillUserInfo(getAuthToken()); loadCartSummary(); } });
+</script>
+
+{% endblock %}

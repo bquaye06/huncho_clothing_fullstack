@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}HunchØ Admin{% endblock %}</title>
+
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            admin: '#0ea5a4', /* teal */
+            admindark: '#062a2a',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <!-- Page loader for admin area: mirrors customer loader behavior -->
+  <div id="page-loader" class="fixed inset-0 z-[9999] bg-white/90 loader-backdrop flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300" aria-hidden="true" aria-live="polite" role="status" aria-label="Loading content">
+    <div class="flex flex-col items-center gap-4 loader-content">
+      <img src="/static/images/logo_2.png" alt="HunchØ.clothing" class="h-20 w-auto loader-logo" loading="eager" />
+      <div class="w-40 h-1 bg-gray-200 rounded overflow-hidden mt-2">
+        <div id="loader-bar-admin" class="bg-admin h-full w-0 transition-all duration-700"></div>
+      </div>
+      <span class="sr-only">Loading, please wait...</span>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const loader = document.getElementById('page-loader');
+      const loaderBar = document.getElementById('loader-bar-admin');
+      if (!loader) return;
+
+      // Auto-hide watchdog id (in case loader gets stuck)
+      let __adminLoaderAutoHide = null;
+
+      function showLoader(){
+        try{
+          try { if (__adminLoaderAutoHide) { clearTimeout(__adminLoaderAutoHide); __adminLoaderAutoHide = null; } } catch(e){}
+          loader.classList.remove('opacity-0','pointer-events-none');
+          loader.classList.add('opacity-100');
+          if (loaderBar) loaderBar.style.width = '70%';
+
+          // safety: auto-hide after 4s if something went wrong
+          __adminLoaderAutoHide = setTimeout(() => { try { hideLoader(); } catch(e){}; try { __adminLoaderAutoHide = null; } catch(e){} }, 4000);
+        }catch(e){}
+      }
+
+      function hideLoader(){
+        try{
+          try { if (__adminLoaderAutoHide) { clearTimeout(__adminLoaderAutoHide); __adminLoaderAutoHide = null; } } catch(e){}
+          if (loaderBar) loaderBar.style.width = '100%';
+          setTimeout(()=>{
+            loader.classList.add('opacity-0','pointer-events-none');
+            if (loaderBar) loaderBar.style.width = '0%';
+          }, 250);
+        }catch(e){}
+      }
+
+      // expose helpers for admin scripts
+      window.showLoader = showLoader;
+      window.hideLoader = hideLoader;
+
+      // Show loader for normal link clicks and form submits (same heuristic as customer base)
+      document.addEventListener('click', (e) => {
+        const a = e.target.closest && e.target.closest('a');
+        if (!a) return;
+        const href = a.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:')) return;
+        if (a.target === '_blank' || a.rel === 'external') return;
+        if (a.dataset && a.dataset.noLoader) return;
+        showLoader();
+      });
+
+      document.addEventListener('submit', (e) => {
+        try{
+          // if the form or a parent has data-no-loader, don't show the full-page loader (used for AJAX forms)
+          const form = e.target && (e.target.closest ? e.target.closest('form') : null) || e.target;
+          if (form && form.dataset && form.dataset.noLoader) return;
+        }catch(_){ }
+        showLoader();
+      });
+
+      // Debounce showing the loader on beforeunload so quick back/forward navigation
+      // or bfcache restores don't leave the overlay visible. Also listen for popstate
+      // (history navigation) to ensure the loader is hidden when user navigates back.
+      let __adminLoaderTimeout = null;
+      window.addEventListener('beforeunload', () => { try { __adminLoaderTimeout = setTimeout(() => { showLoader(); }, 80); } catch(e){} });
+
+      function __adminClearAndHide(){ try { if (__adminLoaderTimeout) { clearTimeout(__adminLoaderTimeout); __adminLoaderTimeout = null; } } catch(e){}; try { hideLoader(); } catch(e){} }
+  window.addEventListener('popstate', __adminClearAndHide);
+  window.addEventListener('pageshow', __adminClearAndHide);
+  document.addEventListener('DOMContentLoaded', __adminClearAndHide);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) __adminClearAndHide(); });
+
+  // Run once now to clear any stuck loader state
+  try { __adminClearAndHide(); } catch(e){}
+    })();
+  </script>
+
+  <link rel="preload" href="/static/images/logo_2.png" as="image">
+  <link rel="icon" href="/static/images/logo_2.png" type="image/png" />
+</head>
+<body class="min-h-screen bg-gray-50 font-sans text-gray-800">
+
+  <div class="min-h-screen flex">
+    <!-- Sidebar (admin) -->
+    <aside class="hidden lg:flex lg:flex-col w-64 bg-gradient-to-b from-admindark to-gray-900 text-white p-6">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="w-10 h-10 bg-white text-admindark rounded flex items-center justify-center font-bold">HØ</div>
+        <div>
+          <div class="text-sm font-semibold">HunchØ Admin</div>
+          <div class="text-xs text-gray-300">Store panel</div>
+        </div>
+      </div>
+
+      <nav class="flex-1">
+        <ul class="space-y-2 text-sm">
+          <li><a href="/admin/dashboard" class="block px-3 py-2 rounded hover:bg-white/10">Dashboard</a></li>
+          <li><a href="/admin/orders" class="block px-3 py-2 rounded hover:bg-white/10">Orders</a></li>
+          <li><a href="/admin/products" class="block px-3 py-2 rounded hover:bg-white/10">Products</a></li>
+          <li><a href="/admin/customers" class="block px-3 py-2 rounded hover:bg-white/10">Customers</a></li>
+          <li><a href="/admin/settings" class="block px-3 py-2 rounded hover:bg-white/10">Settings</a></li>
+        </ul>
+      </nav>
+
+      <div class="mt-6">
+        <button id="adminLogoutBtn" class="w-full text-left px-3 py-2 rounded bg-white text-admindark font-medium">Sign out</button>
+      </div>
+    </aside>
+
+    <!-- Main content area -->
+    <div class="flex-1 min-h-screen">
+      <!-- Topbar for small screens -->
+      <header class="lg:hidden bg-white border-b">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <a href="/admin/dashboard" class="inline-flex items-center gap-3">
+            <div class="w-8 h-8 bg-admin text-white rounded flex items-center justify-center font-bold">HØ</div>
+            <div class="text-sm font-semibold">Admin</div>
+          </a>
+          <div>
+            <button id="mobileMenuBtn" class="text-gray-600">☰</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="p-6">
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="border-t mt-12 bg-white p-4 text-xs text-gray-500">
+        <div class="max-w-6xl mx-auto">Admin panel &copy; {{ current_year or 2025 }}</div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Minimal toast system for admin area (re-uses site showToast if present) -->
+  <div id="toast-admin" class="fixed top-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none"></div>
+  <script>
+    (function(){
+      const container = document.getElementById('toast-admin');
+      if (!container) return;
+
+      // Create a stylized toast matching the provided design. Uses Tailwind classes.
+      window.showAdminToast = function(message, type='info', opts={}){
+        try {
+          // always use the admin-specific toast style so admin UI looks consistent
+
+          const duration = typeof opts.duration === 'number' ? opts.duration : 4000;
+
+          // build toast structure matching the provided visual
+          const toast = document.createElement('div');
+          toast.setAttribute('role','status');
+          toast.className = 'pointer-events-auto flex items-center gap-4 max-w-sm w-full p-3 rounded-xl shadow-md transform transition-all duration-300 opacity-100';
+
+          // choose style variants that match the screenshot
+          let wrapperClass = 'bg-white border border-gray-100 text-gray-900';
+          let iconWrapClass = 'bg-white text-gray-700';
+          let iconHtml = '<svg class="h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01"/></svg>';
+
+          if (type === 'success'){
+            wrapperClass = 'bg-emerald-50 border border-emerald-200 text-emerald-800';
+            iconWrapClass = 'bg-emerald-100 text-emerald-700';
+            iconHtml = '<svg class="h-5 w-5 text-emerald-700" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 00-1.414-1.414L8 11.172 4.707 7.879a1 1 0 10-1.414 1.414l4 4a1 1 0 001.414 0l8-8z" clip-rule="evenodd"/></svg>';
+          } else if (type === 'error'){
+            wrapperClass = 'bg-rose-50 border border-rose-200 text-rose-800';
+            iconWrapClass = 'bg-rose-100 text-rose-700';
+            iconHtml = '<svg class="h-5 w-5 text-rose-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01"/></svg>';
+          } else if (type === 'info'){
+            wrapperClass = 'bg-white border border-gray-200 text-gray-800';
+            iconWrapClass = 'bg-white text-gray-600';
+            iconHtml = '<svg class="h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01"/></svg>';
+          }
+
+          toast.className += ' ' + wrapperClass;
+
+          const iconContainer = document.createElement('div');
+          iconContainer.className = 'flex-shrink-0 rounded-full p-2 ' + iconWrapClass;
+          iconContainer.innerHTML = iconHtml;
+
+          const content = document.createElement('div');
+          content.className = 'flex-1 text-sm font-medium';
+          content.textContent = typeof message === 'string' ? message : (message && message.title) || '';
+
+          const close = document.createElement('button');
+          close.setAttribute('aria-label','Dismiss notification');
+          close.className = 'ml-3 text-gray-500 hover:text-gray-700';
+          close.innerHTML = '<svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>';
+
+          close.addEventListener('click', () => removeToast(toast));
+
+          toast.appendChild(iconContainer);
+          toast.appendChild(content);
+          toast.appendChild(close);
+
+          // ensure pointer events and stacking
+          container.insertBefore(toast, container.firstChild);
+
+          // small entrance animation
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(-6px)';
+          requestAnimationFrame(()=>{ toast.style.transition = 'opacity 220ms, transform 220ms'; toast.style.opacity='1'; toast.style.transform='translateY(0)'; });
+
+          const timeout = setTimeout(() => removeToast(toast), duration);
+
+          function removeToast(el){
+            clearTimeout(timeout);
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(-6px)';
+            setTimeout(()=>{ try{ el.remove(); }catch(e){} }, 260);
+          }
+
+          return { remove: () => removeToast(toast) };
+        } catch (e) { console.error('showAdminToast error', e); }
+      };
+    })();
+
+    // admin notification helper: use the in-page toast so notifications match client UI
+    (function(){
+      window.showAdminNotification = function(message, type='info', opts={}){
+        try{
+          // Always prefer the admin toast so admin notifications match admin styling
+          if (window.showAdminToast) return window.showAdminToast(message, type, opts);
+          // Fallback to the global site toast if admin toast is not available
+          if (window.showToast) return window.showToast(message, type, opts);
+          // ultimate fallback: console
+          console[type === 'error' ? 'error' : 'log'](typeof message === 'string' ? message : (message && message.title) || message);
+        } catch (e) { console.error('showAdminNotification error', e); }
+      };
+    })();
+
+    // admin logout button behavior
+    (function(){
+      const btn = document.getElementById('adminLogoutBtn');
+      if (!btn) return;
+      btn.addEventListener('click', ()=>{
+        try { localStorage.removeItem('admin_token'); } catch(e){}
+        window.location = '/auth/login';
+      });
+    })();
+  </script>
+</body>
+</html>

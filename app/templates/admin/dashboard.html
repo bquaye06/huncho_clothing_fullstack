@@ -1,0 +1,142 @@
+{% extends 'admin/base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<section class="max-w-7xl mx-auto px-6 py-8">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+    <div class="text-sm text-gray-600">Overview · Last 7 days</div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+    <div class="col-span-1 bg-white rounded-xl shadow p-6">
+      <div class="text-sm text-gray-500">Total Users</div>
+      <div class="mt-2 text-2xl font-bold">{{ stats.total_users }}</div>
+    </div>
+    <div class="col-span-1 bg-white rounded-xl shadow p-6">
+      <div class="text-sm text-gray-500">Total Orders</div>
+      <div class="mt-2 text-2xl font-bold">{{ stats.total_orders }}</div>
+    </div>
+    <div class="col-span-1 bg-white rounded-xl shadow p-6">
+      <div class="text-sm text-gray-500">Total Revenue</div>
+      <div class="mt-2 text-2xl font-bold text-green-600">₵{{ '%.2f'|format(stats.total_revenue) }}</div>
+    </div>
+    <div class="col-span-1 bg-white rounded-xl shadow p-6">
+      <div class="text-sm text-gray-500">Top Product (30d)</div>
+      {% if stats.top_products and stats.top_products|length > 0 %}
+        <div class="mt-3 flex items-center gap-3">
+          <img src="{{ stats.top_products[0].image_url }}" alt="{{ stats.top_products[0].name }}" class="w-12 h-12 object-cover rounded"/>
+          <div>
+            <div class="text-sm font-semibold">{{ stats.top_products[0].name }}</div>
+            <div class="text-xs text-gray-500">Sold: {{ stats.top_products[0].quantity_sold }}</div>
+          </div>
+        </div>
+      {% else %}
+        <div class="mt-3 text-sm text-gray-400">No data</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 bg-white rounded-xl shadow p-6">
+      <h3 class="text-sm text-gray-600 mb-4">Revenue (last 7 days)</h3>
+      <canvas id="revenueChart" class="w-full h-56"></canvas>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-6">
+      <h3 class="text-sm text-gray-600 mb-4">Top Products (30d)</h3>
+      <ul class="space-y-3">
+        {% for p in stats.top_products %}
+          <li class="flex items-center gap-3">
+            <img src="{{ p.image_url }}" class="w-10 h-10 object-cover rounded" alt="{{ p.name }}" />
+            <div class="flex-1">
+              <div class="text-sm font-medium">{{ p.name }}</div>
+              <div class="text-xs text-gray-500">Sold: {{ p.quantity_sold }}</div>
+            </div>
+          </li>
+        {% else %}
+          <li class="text-sm text-gray-400">No top products</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="mt-6 bg-white rounded-xl shadow p-6">
+    <h3 class="text-sm text-gray-600 mb-4">Recent Orders</h3>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="text-xs text-gray-500 text-left border-b">
+          <tr>
+            <th class="py-2">Order</th>
+            <th class="py-2">User</th>
+            <th class="py-2">Amount</th>
+            <th class="py-2">Status</th>
+            <th class="py-2">Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in stats.recent_orders %}
+          <tr class="border-b">
+            <td class="py-3 font-medium">#{{ o.order_id }}</td>
+            <td class="py-3">{{ o.user_id }}</td>
+            <td class="py-3">₵{{ '%.2f'|format(o.total_amount) }}</td>
+            <td class="py-3"><span class="text-xs py-1 px-2 rounded {{ 'bg-green-100 text-green-800' if o.status == 'completed' else 'bg-yellow-100 text-yellow-800' }}">{{ o.status }}</span></td>
+            <td class="py-3">{{ o.created_at.split('T')[0] if o.created_at }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="py-6 text-center text-gray-400">No recent orders</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  (function(){
+    const labels = {{ stats.revenue_by_day_labels | tojson }};
+    const data = {{ stats.revenue_by_day_values | tojson }};
+
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    // Compute a suggested max to scale the y-axis up for larger currency values
+    const maxVal = Math.max.apply(null, data.map(d => Number(d) || 0));
+    // If maxVal is small (<1000) still allow reasonable headroom; otherwise scale to thousands
+    const suggestedMax = maxVal <= 0 ? 1000 : Math.ceil((maxVal * 1.4) / 1000) * 1000;
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Revenue',
+          data: data,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16,185,129,0.08)',
+          fill: true,
+          tension: 0.2,
+          pointRadius: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            suggestedMax: suggestedMax,
+            ticks: {
+              callback: function(value){
+                const v = Number(value) || 0;
+                if (v >= 1000000) return '₵' + (v/1000000).toFixed(1) + 'M';
+                if (v >= 1000) return '₵' + (v/1000).toFixed(1) + 'K';
+                return '₵' + v.toFixed(2);
+              }
+            }
+          }
+        }
+      }
+    });
+  })();
+</script>
+{% endblock %}

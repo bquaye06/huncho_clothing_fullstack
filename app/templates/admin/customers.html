@@ -1,0 +1,439 @@
+{% extends 'admin/base.html' %}
+{% block title %}Customers — Admin{% endblock %}
+{% block content %}
+
+<section class="max-w-7xl mx-auto px-6 py-8">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-semibold">Customers</h1>
+    <div class="flex items-center gap-3">
+      <input id="custSearch" type="search" placeholder="Search by name, email or phone" class="px-3 py-2 border rounded-md w-64 focus:ring-admin focus:border-admin" />
+      <select id="custFilter" class="px-3 py-2 border rounded-md">
+        <option value="all">All</option>
+        <option value="verified">Verified</option>
+        <option value="unverified">Unverified</option>
+        <option value="admin">Admins</option>
+      </select>
+      <button id="refreshBtn" class="px-3 py-2 bg-admin text-white rounded-md">Refresh</button>
+    </div>
+  </div>
+
+  <!-- Details modal (read-only user info) -->
+  <div id="detailsModal" class="fixed inset-0 z-60 hidden flex items-center justify-center bg-black/50 px-4" style="z-index:9999;" aria-hidden="true">
+    <div id="detailsDialog" role="dialog" aria-modal="true" aria-labelledby="detailsTitle" class="relative bg-white rounded-2xl w-full max-w-xl p-8 shadow-xl mx-auto">
+      <h3 id="detailsTitle" class="text-2xl font-semibold mb-2">Customer Details</h3>
+      <!-- Spinner overlay shown while loading details -->
+      <div id="detailsSpinner" class="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl hidden" aria-hidden="true">
+        <div class="flex items-center gap-3">
+          <svg class="animate-spin h-6 w-6 text-admin" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+          <span class="text-sm text-gray-700">Loading…</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 text-sm text-gray-700">
+        <div><span class="font-medium">Username</span><div id="detailsUsername" class="mt-1">-</div></div>
+        <div><span class="font-medium">Full name</span><div id="detailsFullName" class="mt-1">-</div></div>
+        <div><span class="font-medium">Email</span><div id="detailsEmail" class="mt-1">-</div></div>
+        <div><span class="font-medium">Phone</span><div id="detailsPhone" class="mt-1">-</div></div>
+        <div><span class="font-medium">Date of birth</span><div id="detailsDOB" class="mt-1">-</div></div>
+        <div><span class="font-medium">Country</span><div id="detailsCountry" class="mt-1">-</div></div>
+        <div><span class="font-medium">Role</span><div id="detailsRole" class="mt-1">-</div></div>
+        <div><span class="font-medium">Verified</span><div id="detailsVerified" class="mt-1">-</div></div>
+        <div><span class="font-medium">Admin</span><div id="detailsAdmin" class="mt-1">-</div></div>
+        <div><span class="font-medium">Created</span><div id="detailsCreated" class="mt-1">-</div></div>
+        <div><span class="font-medium">Updated</span><div id="detailsUpdated" class="mt-1">-</div></div>
+      </div>
+      <div class="flex items-center justify-end gap-4 mt-6">
+        <button id="closeDetails" class="px-6 py-2 border rounded-md bg-white text-gray-700 hover:bg-gray-50">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="overflow-x-auto">
+      <table id="customersTable" class="min-w-full text-sm">
+        <thead class="bg-gray-50 text-xs text-gray-600 uppercase tracking-wider">
+          <tr>
+            <th class="px-4 py-3 text-left">Name</th>
+            <th class="px-4 py-3 text-left">Email</th>
+            <th class="px-4 py-3 text-left">Phone</th>
+            <th class="px-4 py-3 text-left">Country</th>
+            <th class="px-4 py-3 text-left">Verified</th>
+            <th class="px-4 py-3 text-left">Admin</th>
+            <th class="px-4 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="customersTbody" class="bg-white">
+          <tr><td colspan="7" class="p-6 text-center text-gray-400">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Edit modal -->
+  <div id="editModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 px-4" aria-hidden="true">
+    <div id="editDialog" role="dialog" aria-modal="true" aria-labelledby="editTitle" class="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-xl mx-auto">
+      <h3 id="editTitle" class="text-2xl font-semibold mb-2">Edit Customer</h3>
+      <p id="editSummary" class="text-sm text-gray-600 mb-4">Update customer details below. Changes are saved immediately when you press Save.</p>
+      <form id="editForm" class="space-y-4">
+        <input type="hidden" id="editUserId" />
+        <div>
+          <label for="editUsername" class="text-sm font-medium text-gray-700">Username</label>
+          <input id="editUsername" class="w-full border rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-admin" />
+        </div>
+        <div>
+          <label for="editEmail" class="text-sm font-medium text-gray-700">Email</label>
+          <input id="editEmail" type="email" class="w-full border rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-admin" />
+        </div>
+        <div>
+          <label for="editPhone" class="text-sm font-medium text-gray-700">Phone</label>
+          <input id="editPhone" class="w-full border rounded-md px-3 py-2 mt-1 focus:outline-none focus:ring-2 focus:ring-admin" />
+        </div>
+        <div class="flex items-center gap-6">
+          <label class="inline-flex items-center gap-2"><input id="editVerified" type="checkbox" class="rounded"> <span class="text-sm text-gray-700">Verified</span></label>
+          <label class="inline-flex items-center gap-2"><input id="editAdmin" type="checkbox" class="rounded"> <span class="text-sm text-gray-700">Is Admin</span></label>
+        </div>
+        <div class="flex items-center justify-end gap-4 mt-6">
+          <button type="button" id="closeEdit" class="px-6 py-2 border rounded-md bg-white text-gray-700 hover:bg-gray-50">Cancel</button>
+          <button type="submit" class="px-6 py-2 bg-admin text-white rounded-md">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm modal (replaces window.confirm) -->
+  <div id="confirmModal" class="fixed inset-0 z-60 hidden items-center justify-center bg-black/50 px-4" aria-hidden="true">
+    <div id="confirmDialog" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmBody" class="bg-white rounded-2xl w-full max-w-2xl p-8 shadow-xl mx-auto">
+      <h3 id="confirmTitle" class="text-2xl font-semibold mb-2">Delete user</h3>
+      <p id="confirmBody" class="text-sm text-gray-700 mb-6">Delete this user? This action cannot be undone.</p>
+      <div class="flex items-center justify-end gap-4">
+        <button id="confirmCancel" class="px-6 py-2 border rounded-md bg-white text-gray-700 hover:bg-gray-50">Cancel</button>
+        <button id="confirmOk" class="px-6 py-2 bg-red-600 text-white rounded-md">Delete</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+</section>
+
+<script>
+;(function(){
+  const tbody = document.getElementById('customersTbody');
+  const search = document.getElementById('custSearch');
+  const filter = document.getElementById('custFilter');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const editModal = document.getElementById('editModal');
+  const editForm = document.getElementById('editForm');
+
+  // Helper that always sends cookies and, when available, an Authorization header from localStorage
+  function apiFetch(url, opts){
+    opts = Object.assign({}, opts || {});
+    opts.credentials = opts.credentials || 'same-origin';
+    opts.headers = Object.assign({}, opts.headers || {});
+    const token = localStorage.getItem('admin_token') || localStorage.getItem('access_token') || localStorage.getItem('token');
+    if (token && !opts.headers.Authorization && !opts.headers['Authorization']){
+      opts.headers['Authorization'] = 'Bearer ' + token;
+    }
+    return fetch(url, opts);
+  }
+
+  function showLoading(){ tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-gray-400">Loading…</td></tr>'; }
+
+  async function fetchCustomers(){
+    showLoading();
+    try{
+  const res = await apiFetch('/admin/api/customers');
+      if (!res.ok) throw new Error('Fetch failed');
+      const list = await res.json();
+      renderList(list || []);
+    }catch(err){
+      tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-red-500">Failed to load customers</td></tr>';
+      console.error(err);
+    }
+  }
+
+  function renderList(list){
+    const q = (search.value || '').toLowerCase().trim();
+    const f = (filter.value || 'all');
+    const rows = list.filter(u => {
+      if (f === 'verified' && !u.is_verified) return false;
+      if (f === 'unverified' && u.is_verified) return false;
+      if (f === 'admin' && !u.is_admin) return false;
+      if (!q) return true;
+      return (u.username || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q) || (u.phone_number || '').toLowerCase().includes(q);
+    }).map(u => {
+      return `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-3"><button type="button" class="viewBtn text-left text-admin font-medium cursor-pointer" data-id="${u.user_id}">${u.username || '-'}</button></td>
+          <td class="px-4 py-3">${u.email || '-'}</td>
+          <td class="px-4 py-3">${u.phone_number || '-'}</td>
+          <td class="px-4 py-3">${u.country || '-'}</td>
+          <td class="px-4 py-3">${u.is_verified ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Verified</span>' : '<span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">No</span>'}</td>
+          <td class="px-4 py-3">${u.is_admin ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Admin</span>' : ''}</td>
+          <td class="px-4 py-3 text-right">
+            <button type="button" class="editBtn text-sm text-admin mr-2" data-id="${u.user_id}">Edit</button>
+            <button type="button" class="deleteBtn text-sm text-red-600" data-id="${u.user_id}">Delete</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    tbody.innerHTML = rows || '<tr><td colspan="7" class="p-6 text-center text-gray-400">No customers found</td></tr>';
+
+    // wire actions
+    tbody.querySelectorAll('.viewBtn').forEach(b => b.addEventListener('click', onView));
+    tbody.querySelectorAll('.editBtn').forEach(b => b.addEventListener('click', onEdit));
+    tbody.querySelectorAll('.deleteBtn').forEach(b => b.addEventListener('click', onDelete));
+  }
+
+  // View details handler: opens a read-only details modal populated from server
+  function onView(e){
+    if (e && e.stopPropagation) e.stopPropagation();
+    console.log('onView', e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id);
+    const id = e.currentTarget.dataset.id;
+    // open modal and show loading spinner while fetching
+    showDetailsModal();
+    showDetailsLoading();
+  apiFetch('/admin/api/customers/' + encodeURIComponent(id)).then(r=>{
+      if (!r.ok) throw new Error('Failed to fetch user');
+      return r.json();
+    }).then(u=>{
+      if (!u) return;
+      document.getElementById('detailsUsername').textContent = u.username || '';
+      const full = [u.first_name, u.middle_name, u.last_name].filter(Boolean).join(' ');
+      document.getElementById('detailsFullName').textContent = full || '-';
+      document.getElementById('detailsEmail').textContent = u.email || '-';
+      document.getElementById('detailsPhone').textContent = u.phone_number || '-';
+      document.getElementById('detailsDOB').textContent = u.date_of_birth || '-';
+      document.getElementById('detailsCountry').textContent = u.country || '-';
+      document.getElementById('detailsRole').textContent = u.role || '-';
+      document.getElementById('detailsCreated').textContent = u.created_at || '-';
+      document.getElementById('detailsUpdated').textContent = u.updated_at || '-';
+      document.getElementById('detailsVerified').textContent = u.is_verified ? 'Yes' : 'No';
+  document.getElementById('detailsAdmin').textContent = u.is_admin ? 'Yes' : 'No';
+  showDetailsLoading(false);
+  console.log('details loaded for', id);
+    }).catch(err => { console.error(err); showDetailsLoading(false); window.showAdminNotification && window.showAdminNotification('Failed to load user details', 'error'); });
+  }
+
+  function onEdit(e){
+    if (e && e.stopPropagation) e.stopPropagation();
+    const id = e.currentTarget.dataset.id;
+    // fetch single user data directly from the API (server-side record)
+  apiFetch('/admin/api/customers/' + encodeURIComponent(id)).then(r=>{
+      if (!r.ok) throw new Error('Failed to fetch user');
+      return r.json();
+    }).then(u=>{
+      if (!u) return;
+      document.getElementById('editUserId').value = u.user_id;
+      document.getElementById('editUsername').value = u.username || '';
+      document.getElementById('editEmail').value = u.email || '';
+      document.getElementById('editPhone').value = u.phone_number || '';
+      document.getElementById('editVerified').checked = !!u.is_verified;
+      document.getElementById('editAdmin').checked = !!u.is_admin;
+      // additional fields from DB (non-sensitive) can be set here if needed
+      // open modal with focus management
+      showEditModal();
+    }).catch(err => { console.error(err); window.showAdminNotification && window.showAdminNotification('Failed to load user details', 'error'); });
+  }
+
+  function showConfirm(message, title='Confirm'){
+    return new Promise(resolve => {
+      const modal = document.getElementById('confirmModal');
+      const dialog = document.getElementById('confirmDialog');
+      const body = document.getElementById('confirmBody');
+      const head = document.getElementById('confirmTitle');
+      const okBtn = document.getElementById('confirmOk');
+      const cancelBtn = document.getElementById('confirmCancel');
+
+      if (!modal || !okBtn || !cancelBtn || !body || !dialog) return resolve(false);
+
+      const prevActive = document.activeElement;
+
+      head.textContent = title;
+      body.textContent = message;
+      modal.classList.remove('hidden');
+      modal.setAttribute('aria-hidden','false');
+
+      // focus management
+      try{ okBtn.focus(); }catch(e){}
+
+      function cleanup(result){
+        try{
+          okBtn.removeEventListener('click', onOk);
+          cancelBtn.removeEventListener('click', onCancel);
+          document.removeEventListener('keydown', onKeydown);
+        }catch(e){}
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden','true');
+        try{ if (prevActive && prevActive.focus) prevActive.focus(); }catch(e){}
+        resolve(result);
+      }
+
+      function onOk(){ cleanup(true); }
+      function onCancel(){ cleanup(false); }
+
+      function onKeydown(e){
+        if (e.key === 'Escape') { e.preventDefault(); cleanup(false); }
+        // simple tab trap: keep focus inside dialog
+        if (e.key === 'Tab'){
+          const focusable = dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+          if (!focusable.length) return;
+          const first = focusable[0];
+          const last = focusable[focusable.length -1];
+          if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+        }
+      }
+
+      okBtn.addEventListener('click', onOk);
+      cancelBtn.addEventListener('click', onCancel);
+      document.addEventListener('keydown', onKeydown);
+    });
+  }
+
+  async function onDelete(e){
+    if (e && e.stopPropagation) e.stopPropagation();
+    const id = e.currentTarget.dataset.id;
+    const ok = await showConfirm('Delete this user? This action cannot be undone.', 'Delete user');
+    if (!ok) return;
+
+    try{
+  const r = await apiFetch('/admin/api/customers/' + id, { method: 'DELETE', headers: {'Content-Type':'application/json'} });
+      if (!r.ok) throw new Error('delete failed');
+      if (window.showAdminToast) window.showAdminToast('User deleted', 'success');
+      if (window.showAdminNotification) window.showAdminNotification('User deleted', 'success');
+      fetchCustomers();
+    }catch(err){ console.error(err); window.showAdminNotification('Failed to delete user', 'error'); }
+  }
+
+  // Edit modal accessibility & focus management
+  let _editPrevActive = null;
+  function showEditModal(){
+    const modal = document.getElementById('editModal');
+    const dialog = document.getElementById('editDialog');
+    const ok = document.querySelector('#editForm button[type="submit"]');
+    if (!modal || !dialog) return;
+    _editPrevActive = document.activeElement;
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('overflow-hidden');
+    try{ document.getElementById('editUsername').focus(); }catch(e){}
+
+    // key handling
+    function onKey(e){
+      if (e.key === 'Escape'){ e.preventDefault(); hideEditModal(); }
+      if (e.key === 'Tab'){
+        const focusable = dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length-1];
+        if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+      }
+    }
+
+    document.addEventListener('keydown', onKey);
+    // attach cleanup handler onto modal for later removal
+    modal._editKeyHandler = onKey;
+  }
+
+  function hideEditModal(){
+    const modal = document.getElementById('editModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden','true');
+    document.body.classList.remove('overflow-hidden');
+    try{ if (_editPrevActive && _editPrevActive.focus) _editPrevActive.focus(); }catch(e){}
+    // remove key handler
+    if (modal._editKeyHandler) document.removeEventListener('keydown', modal._editKeyHandler);
+    modal._editKeyHandler = null;
+    _editPrevActive = null;
+  }
+
+  // Details modal show/hide
+  let _detailsPrevActive = null;
+  function showDetailsModal(){
+    const modal = document.getElementById('detailsModal');
+    const dialog = document.getElementById('detailsDialog');
+    console.log('showDetailsModal', !!modal, !!dialog);
+    if (!modal || !dialog) return;
+    _detailsPrevActive = document.activeElement;
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('overflow-hidden');
+    try{ document.getElementById('closeDetails').focus(); }catch(e){}
+
+    function onKey(e){
+      if (e.key === 'Escape'){ e.preventDefault(); hideDetailsModal(); }
+      if (e.key === 'Tab'){
+        const focusable = dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length-1];
+        if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+      }
+    }
+
+    document.addEventListener('keydown', onKey);
+    modal._detailsKeyHandler = onKey;
+  }
+
+  function hideDetailsModal(){
+    const modal = document.getElementById('detailsModal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden','true');
+    document.body.classList.remove('overflow-hidden');
+    try{ if (_detailsPrevActive && _detailsPrevActive.focus) _detailsPrevActive.focus(); }catch(e){}
+    if (modal._detailsKeyHandler) document.removeEventListener('keydown', modal._detailsKeyHandler);
+    modal._detailsKeyHandler = null;
+    _detailsPrevActive = null;
+  }
+
+  function showDetailsLoading(show = true){
+    const dialog = document.getElementById('detailsDialog');
+    const spinner = document.getElementById('detailsSpinner');
+    if (!dialog || !spinner) return;
+    if (show){
+      spinner.classList.remove('hidden');
+      spinner.setAttribute('aria-hidden','false');
+      dialog.setAttribute('aria-busy','true');
+    } else {
+      spinner.classList.add('hidden');
+      spinner.setAttribute('aria-hidden','true');
+      dialog.setAttribute('aria-busy','false');
+    }
+  }
+
+  document.getElementById('closeDetails').addEventListener('click', ()=> hideDetailsModal());
+
+  editForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const id = document.getElementById('editUserId').value;
+    const payload = {
+      username: document.getElementById('editUsername').value,
+      email: document.getElementById('editEmail').value,
+      phone_number: document.getElementById('editPhone').value,
+      is_verified: document.getElementById('editVerified').checked,
+      is_admin: document.getElementById('editAdmin').checked
+    };
+    try{
+  const res = await apiFetch('/admin/api/customers/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      if (!res.ok) throw new Error('update failed');
+      if (window.showAdminToast) window.showAdminToast('User updated', 'success');
+      hideEditModal();
+      fetchCustomers();
+  }catch(err){ console.error(err); window.showAdminNotification('Failed to update user', 'error'); }
+  });
+
+  document.getElementById('closeEdit').addEventListener('click', ()=> hideEditModal());
+  refreshBtn.addEventListener('click', fetchCustomers);
+  search.addEventListener('input', ()=> fetchCustomers());
+  filter.addEventListener('change', ()=> fetchCustomers());
+
+  // initial load
+  fetchCustomers();
+})();
+</script>
+
+{% endblock %}

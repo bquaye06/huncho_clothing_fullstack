@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Search — HunchØ.clothing{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-4xl mx-auto">
+  <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+    <div class="p-4 border-b flex items-center gap-3">
+      <!-- <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg> -->
+      <input id="searchInput" type="search" placeholder="Search products (e.g. hoodie, t-shirts, caps)" class="w-full p-3 text-lg outline-none" autofocus />
+      <button id="clearBtn" class="text-sm text-gray-500">Clear</button>
+    </div>
+    <div class="p-4">
+      <div id="resultsMeta" class="text-sm text-gray-500 mb-3">Type to search products</div>
+      <div id="results" class="grid grid-cols-1 gap-3"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const input = document.getElementById('searchInput');
+  const resultsEl = document.getElementById('results');
+  const meta = document.getElementById('resultsMeta');
+  const clearBtn = document.getElementById('clearBtn');
+
+  let timeout = null;
+  function debounce(fn, ms){
+    return function(...args){
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => fn.apply(this, args), ms);
+    };
+  }
+
+  async function doSearch(q){
+    q = (q || '').trim();
+    if (!q){
+      meta.textContent = 'Type to search products';
+      resultsEl.innerHTML = '';
+      return;
+    }
+    meta.textContent = `Searching for "${q}"...`;
+    try{
+      const res = await fetch(`/shop/api/search?q=${encodeURIComponent(q)}`);
+      if (!res.ok) throw new Error('Search failed');
+      const items = await res.json();
+      renderResults(items);
+    }catch(err){
+      console.error('search error', err);
+      meta.textContent = 'Error searching products';
+      resultsEl.innerHTML = '';
+    }
+  }
+
+  function formatCurrency(v){ return 'GHS ' + (Number(v) || 0).toFixed(2); }
+
+  function renderResults(items){
+    meta.textContent = `Products (${items.length})`;
+    if (!items.length){
+      resultsEl.innerHTML = '<div class="p-8 text-center text-gray-500">No products found</div>';
+      return;
+    }
+    resultsEl.innerHTML = '';
+    items.forEach(p => {
+      const a = document.createElement('a');
+      a.href = '/shop/products/' + encodeURIComponent(p.name);
+      a.className = 'block p-4 border rounded-md flex items-center gap-4 hover:shadow-sm transition-shadow bg-white';
+
+      const thumb = document.createElement('div');
+      thumb.className = 'w-40 h-40 bg-gray-100 rounded overflow-hidden flex items-center justify-center border';
+      const img = document.createElement('img');
+      img.src = p.image_url || '/static/images/dress.webp';
+      img.alt = p.name || 'product';
+      img.className = 'w-full h-full object-contain';
+      thumb.appendChild(img);
+
+      const meta = document.createElement('div');
+      meta.className = 'flex-1';
+      meta.innerHTML = `<div class="text-base font-semibold text-gray-800">${p.name}</div>
+                        <div class="text-sm text-gray-500 mt-2">${p.description || ''}</div>
+                        <div class="text-lg font-bold mt-4">${formatCurrency(p.price)}</div>`;
+
+      a.appendChild(thumb);
+      a.appendChild(meta);
+      resultsEl.appendChild(a);
+    });
+  }
+
+  const deb = debounce((e) => doSearch(e.target.value), 250);
+  input.addEventListener('input', deb);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { window.history.back(); }
+  });
+  clearBtn.addEventListener('click', () => { input.value = ''; input.focus(); doSearch(''); });
+})();
+</script>
+
+{% endblock %}
