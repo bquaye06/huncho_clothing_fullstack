@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from app.models import db, User
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.utils.validators import validate_json
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -185,7 +185,29 @@ def verify_login_otp():
     response = jsonify(payload)
     try:
         if is_admin:
-            response.set_cookie('admin_token', access_token, samesite='Lax')
+            # Use application cookie settings for secure behavior
+            samesite = current_app.config.get('SESSION_COOKIE_SAMESITE', 'Lax')
+            secure = current_app.config.get('SESSION_COOKIE_SECURE', False)
+            httponly = True
+            # Derive max_age from JWT access token expiry when available
+            max_age = None
+            try:
+                expiry = current_app.config.get('JWT_ACCESS_TOKEN_EXPIRES')
+                if isinstance(expiry, timedelta):
+                    max_age = int(expiry.total_seconds())
+            except Exception:
+                max_age = None
+
+            # Set cookie with secure defaults; client JS cannot read HttpOnly cookies.
+            response.set_cookie(
+                'admin_token',
+                access_token,
+                max_age=max_age,
+                secure=secure,
+                httponly=httponly,
+                samesite=samesite,
+                path='/'
+            )
     except Exception:
         pass
 

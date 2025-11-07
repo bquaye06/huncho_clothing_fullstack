@@ -65,6 +65,13 @@ def create_app():
     app.config['SESSION_COOKIE_SAMESITE'] = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
     # For local development using http, keep SESSION_COOKIE_SECURE False; set to True in production with HTTPS
     app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
+    # Prevent JavaScript from reading the session cookie to mitigate XSS risks
+    app.config['SESSION_COOKIE_HTTPONLY'] = os.getenv('SESSION_COOKIE_HTTPONLY', 'True').lower() == 'true'
+
+    # Helpful defaults for other cookie-related security settings used by extensions
+    # These can be overridden through environment variables when deploying.
+    app.config.setdefault('REMEMBER_COOKIE_HTTPONLY', True)
+    app.config.setdefault('REMEMBER_COOKIE_DURATION', timedelta(days=7))
     
     # Rate Limiter Configuration
     # JWT configuration: increase token lifetimes (defaults: access=1 day, refresh=30 days)
