@@ -8,7 +8,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
 
     <!-- Left visual promo -->
-    <div class="hidden lg:flex rounded-lg overflow-hidden bg-cover bg-center" style="background: linear-gradient(135deg, rgba(225,29,72,0.85), rgba(15,23,42,0.85)), url('/app/static/images/logo_2.png'); background-size: cover; background-position: center;">
+  <div class="hidden lg:flex rounded-lg overflow-hidden bg-cover bg-center" style="background: linear-gradient(135deg, rgba(225,29,72,0.85), rgba(15,23,42,0.85)), url('{{ url_for('static', filename='images/logo_2.png') }}'); background-size: cover; background-position: center;">
       <div class="p-12 text-white flex flex-col justify-center gap-4">
         <h1 class="text-4xl font-extrabold leading-tight">Welcome back</h1>
         <p class="opacity-90 max-w-md">Sign in to manage your orders, track shipments and access exclusive offers.</p>
@@ -23,7 +23,7 @@
           <h2 class="text-2xl font-semibold text-dark">Sign in to your account</h2>
           <p class="text-sm text-gray-500">Enter your credentials to continue.</p>
         </div>
-        <img src="/static/images/logo_2.png" alt="logo" class="h-10 w-auto">
+  <img src="{{ url_for('static', filename='images/logo_2.png') }}" alt="logo" class="h-10 w-auto">
       </div>
 
   <form id="loginForm" class="space-y-4" data-no-loader="true">
@@ -60,7 +60,7 @@
             <span class="w-24 h-px bg-gray-200"></span>
           </div>
           <a href="/auth/google/login" class="inline-flex items-center gap-3 mt-3 border rounded-md px-4 py-2 hover:shadow-sm">
-            <img src="/static/images/google_logo.png" alt="Google" class="h-5 w-5">
+            <img src="{{ url_for('static', filename='images/google_logo.png') }}" alt="Google" class="h-5 w-5">
             <span class="text-sm">Sign in with Google</span>
           </a>
         </div>

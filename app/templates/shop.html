@@ -5,7 +5,7 @@
 <!-- Modern Shop Layout inspired by reference -->
 <section class="relative">
   <div class="w-full h-[56vh] lg:h-[64vh] overflow-hidden">
-    <div class="w-full h-full hero-shop-bg" style="background-image: url('/static/images/hero.jpg'); background-size: cover; background-position: center; filter: brightness(.55);"></div>
+  <div class="w-full h-full hero-shop-bg" style="background-image: url('{{ url_for('static', filename='images/hero.jpg') }}'); background-size: cover; background-position: center; filter: brightness(.55);"></div>
     <div class="absolute inset-0 flex items-center justify-center">
       <div class="text-center text-white">
         <h1 class="text-4xl md:text-6xl font-extrabold tracking-widest">SHOP</h1>
@@ -100,9 +100,9 @@
           {# support full URLs or absolute paths stored in DB, otherwise fall back to static/products filename #}
           {% set imgval = (product.image_url or '') %}
           {% if imgval.startswith('http') or imgval.startswith('/') %}
-            <img src="{{ imgval }}" alt="{{ product.name }}" title="{{ imgval }}" class="max-h-56 object-contain transition-transform group-hover:scale-105" onerror="this.onerror=null;this.src='/static/images/dress.webp'" />
+            <img src="{{ imgval }}" alt="{{ product.name }}" title="{{ imgval }}" class="max-h-56 object-contain transition-transform group-hover:scale-105" onerror="this.onerror=null;this.src=window._STATIC.dress" />
           {% else %}
-            <img src="{{ url_for('static', filename='images/products/' ~ (imgval if imgval else 'dress.webp')) }}" alt="{{ product.name }}" title="{{ imgval }}" class="max-h-56 object-contain transition-transform group-hover:scale-105" onerror="this.onerror=null;this.src='/static/images/dress.webp'" />
+            <img src="{{ url_for('static', filename='images/products/' ~ (imgval if imgval else 'dress.webp')) }}" alt="{{ product.name }}" title="{{ imgval }}" class="max-h-56 object-contain transition-transform group-hover:scale-105" onerror="this.onerror=null;this.src=window._STATIC.dress" />
           {% endif %}
         </div>
         <div class="mt-4 text-left px-1">

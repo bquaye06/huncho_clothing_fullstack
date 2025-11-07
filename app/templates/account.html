@@ -68,10 +68,10 @@ function notifySuccess(title, body) {
   try {
     if ("Notification" in window) {
       if (Notification.permission === 'granted') {
-        new Notification(title, { body: body, icon: '/static/images/logo_2.png' });
+        new Notification(title, { body: body, icon: window._STATIC.logo });
       } else if (Notification.permission !== 'denied') {
         Notification.requestPermission().then(p => {
-          if (p === 'granted') new Notification(title, { body: body, icon: '/static/images/logo_2.png' });
+          if (p === 'granted') new Notification(title, { body: body, icon: window._STATIC.logo });
           else if (window.showToast) showToast(body, 'success');
         }).catch(() => { if (window.showToast) showToast(body, 'success'); });
       } else {
@@ -324,8 +324,8 @@ async function loadOrders(){
       const total = o.total_amount ? ('₵' + Number(o.total_amount).toFixed(2)) : '';
       const status = o.status || 'pending';
       const itemsHtml = (o.items || []).map(it => `
-          <div class="flex items-center gap-4 py-3 border-b">
-            <img src="${it.image || '/static/images/dress.webp'}" class="w-20 h-20 object-contain" alt="${(it.product_name||'').replace(/\"/g,'')}">
+            <div class="flex items-center gap-4 py-3 border-b">
+            <img src="${it.image || window._STATIC.dress}" class="w-20 h-20 object-contain" alt="${(it.product_name||'').replace(/\"/g,'')}">
             <div class="flex-1">
               <div class="text-sm font-medium">${it.product_name || 'Product'}</div>
               <div class="text-xs text-gray-500">Qty: ${it.quantity} — ₵${Number(it.price).toFixed(2)}</div>

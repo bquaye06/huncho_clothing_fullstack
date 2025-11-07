@@ -44,7 +44,7 @@
 
     const rows = items.map(it => {
       const name = (it.name || '').toUpperCase();
-      const image = it.image || '/static/images/dress.webp';
+  const image = it.image || window._STATIC.dress;
       const price = formatPrice(it.price);
       const oldPrice = it.old_price ? formatPrice(it.old_price) : '';
 

@@ -23,7 +23,8 @@ oauth = OAuth()
 def create_app():
     # Ensure Flask looks for templates in the package's `templates/` directory
     templates_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
-    app = Flask(__name__, template_folder=templates_path)
+    static_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'static'))
+    app = Flask(__name__, template_folder=templates_path, static_folder=static_path)
     
     # Flask configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')

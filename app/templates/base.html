@@ -47,10 +47,21 @@
   </script>
 
   <!-- Preload critical resources -->
-  <link rel="preload" href="/static/images/logo_2.png" as="image">
+  <link rel="preload" href="{{ url_for('static', filename='images/logo_2.png') }}" as="image">
   
   <!-- Favicon -->
-  <link rel="icon" href="/static/images/logo_2.png" type="image/png" />
+  <link rel="icon" href="{{ url_for('static', filename='images/logo_2.png') }}" type="image/png" />
+  <script>
+    // Small helper: expose frequently-used static URLs to client-side JS so we
+    // avoid embedding url_for() calls inside complex JS template literals.
+    window._STATIC = {
+      logo: "{{ url_for('static', filename='images/logo_2.png') }}",
+      dress: "{{ url_for('static', filename='images/dress.webp') }}",
+      no_image: "{{ url_for('static', filename='images/no-image.jpg') }}",
+      hero: "{{ url_for('static', filename='images/hero.jpg') }}",
+      google_logo: "{{ url_for('static', filename='images/google_logo.png') }}"
+    };
+  </script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col initial-load">
   
@@ -156,7 +167,7 @@
   <!-- Page loader: shows on navigation, form submit and refresh for a smooth transition -->
   <div id="page-loader" class="fixed inset-0 z-[9999] bg-white/90 loader-backdrop flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300" aria-hidden="true" aria-live="polite" role="status" aria-label="Loading content">
     <div class="flex flex-col items-center gap-4 loader-content">
-      <img src="/static/images/logo_2.png" alt="HunchØ.clothing" class="h-20 w-auto loader-logo" loading="eager" />
+  <img src="{{ url_for('static', filename='images/logo_2.png') }}" alt="HunchØ.clothing" class="h-20 w-auto loader-logo" loading="eager" />
       <div class="w-40 h-1 bg-gray-200 rounded overflow-hidden mt-2">
         <div id="loader-bar" class="bg-primary h-full w-0 transition-all duration-700"></div>
       </div>
@@ -464,7 +475,7 @@
           const thumb = document.createElement('div');
           thumb.className = 'w-20 h-20 bg-gray-100 rounded flex items-center justify-center overflow-hidden border';
           const img = document.createElement('img');
-          img.src = it.image || '/static/images/dress.webp';
+          img.src = it.image || window._STATIC.dress;
           img.alt = it.name || '';
           img.className = 'w-full h-full object-contain';
           thumb.appendChild(img);
@@ -588,7 +599,7 @@
           const thumbWrap = document.createElement('div');
           thumbWrap.className = 'w-28 h-28 bg-gray-50 rounded overflow-hidden flex items-center justify-center border';
           const img = document.createElement('img');
-          img.src = p.image_url || '/static/images/dress.webp';
+          img.src = p.image_url || window._STATIC.dress;
           img.alt = p.name || 'product';
           img.className = 'w-full h-full object-contain';
           thumbWrap.appendChild(img);

@@ -32,22 +32,22 @@
       <div class="w-full max-w-lg">
         {% set imgval = (product.image_url or '') %}
         {% if imgval.startswith('http') or imgval.startswith('/') %}
-          <img id="mainProductImage" src="{{ imgval if imgval else url_for('static', filename='images/dress.webp') }}" alt="{{ product.name }}" class="w-full h-[520px] object-contain rounded-lg bg-white p-6 shadow" onerror="this.onerror=null;this.src='/static/images/dress.webp'" />
+          <img id="mainProductImage" src="{{ imgval if imgval else url_for('static', filename='images/dress.webp') }}" alt="{{ product.name }}" class="w-full h-[520px] object-contain rounded-lg bg-white p-6 shadow" onerror="this.onerror=null;this.src=window._STATIC.dress" />
         {% else %}
-          <img id="mainProductImage" src="{{ url_for('static', filename='images/products/' ~ (imgval if imgval else 'dress.webp')) }}" alt="{{ product.name }}" class="w-full h-[520px] object-contain rounded-lg bg-white p-6 shadow" onerror="this.onerror=null;this.src='/static/images/dress.webp'" />
+          <img id="mainProductImage" src="{{ url_for('static', filename='images/products/' ~ (imgval if imgval else 'dress.webp')) }}" alt="{{ product.name }}" class="w-full h-[520px] object-contain rounded-lg bg-white p-6 shadow" onerror="this.onerror=null;this.src=window._STATIC.dress" />
         {% endif %}
       </div>
 
       <div class="mt-6 w-full max-w-lg flex items-center gap-3 justify-center">
         {# thumbnails: primary image + two fallbacks (if available) #}
         {% set thumb1 = imgval %}
-        {% set thumb2 = '/static/images/dress.webp' %}
+  {% set thumb2 = url_for('static', filename='images/dress.webp') %}
         {% set thumb3 = url_for('static', filename='images/logo_2.png') %}
 
         {% for t in [thumb1, thumb2, thumb3] %}
           {% if t %}
             <button type="button" class="thumbnail-btn border rounded p-1 bg-white" data-src="{{ t }}">
-              <img src="{{ t }}" alt="thumb" class="w-16 h-16 object-contain" onerror="this.onerror=null;this.src='/static/images/dress.webp'" />
+              <img src="{{ t }}" alt="thumb" class="w-16 h-16 object-contain" onerror="this.onerror=null;this.src=window._STATIC.dress" />
             </button>
           {% endif %}
         {% endfor %}
@@ -158,7 +158,7 @@
   const productId = productMeta ? Number(productMeta.dataset.productId || 0) : null;
   const productName = productMeta ? (productMeta.dataset.productName || '') : '';
   const productPrice = productMeta ? (Number(productMeta.dataset.productPrice) || 0) : 0;
-  const productImage = productMeta ? (productMeta.dataset.productImage || '/static/images/dress.webp') : '/static/images/dress.webp';
+  const productImage = productMeta ? (productMeta.dataset.productImage || window._STATIC.dress) : window._STATIC.dress;
 
   // Thumbnail click swaps main image
   thumbs.forEach(t => t.addEventListener('click', (e) => {

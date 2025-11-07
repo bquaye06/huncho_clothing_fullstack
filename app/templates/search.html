@@ -68,8 +68,8 @@
 
       const thumb = document.createElement('div');
       thumb.className = 'w-40 h-40 bg-gray-100 rounded overflow-hidden flex items-center justify-center border';
-      const img = document.createElement('img');
-      img.src = p.image_url || '/static/images/dress.webp';
+  const img = document.createElement('img');
+  img.src = p.image_url || window._STATIC.dress;
       img.alt = p.name || 'product';
       img.className = 'w-full h-full object-contain';
       thumb.appendChild(img);

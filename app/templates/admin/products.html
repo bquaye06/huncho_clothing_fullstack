@@ -40,7 +40,7 @@
           {% for p in products %}
           <tr class="hover:bg-gray-50" data-id="{{ p.product_id }}">
             <td class="px-6 py-4 flex items-center gap-4">
-              <img src="{{ p.image_url or '/static/images/no-image.jpg' }}" alt="{{ p.name }}" class="w-16 h-16 rounded-md object-cover">
+              <img src="{{ p.image_url or url_for('static', filename='images/no-image.jpg') }}" alt="{{ p.name }}" class="w-16 h-16 rounded-md object-cover">
               <div>
                 <div class="text-sm font-medium text-gray-900">{{ p.name }}</div>
                 <div class="text-xs text-gray-500">{{ p.size or '-' }} · {{ p.color or '-' }}</div>
