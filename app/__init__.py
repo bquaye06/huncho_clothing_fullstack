@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_limiter.errors import RateLimitExceeded
+from werkzeug.exceptions import HTTPException
 from dotenv import load_dotenv
 import os
 
@@ -159,6 +160,9 @@ def create_app():
     # Generic error handler to ensure the app returns JSON for unexpected errors
     @app.errorhandler(Exception)
     def handle_unexpected_error(e):
+        # Do not convert HTTPExceptions (404, 401, etc.) into 500 responses.
+        if isinstance(e, HTTPException):
+            return e
         # Log full traceback to the app logger so it's available in Render logs
         try:
             app.logger.exception('Unhandled exception: %s', e)
