@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Project-specific small overrides go here. Keep this file minimal and prefer
+   component-level classes. */
+
+/* Example: make the primary color available as a utility if needed */
+/* .text-primary { color: theme('colors.primary'); } */

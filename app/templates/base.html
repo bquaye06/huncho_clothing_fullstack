@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}HunchØ.clothing{% endblock %}</title>
 
-  <!-- TailwindCSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Production-ready Tailwind CSS: use a built local stylesheet instead of the CDN. -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}" />
+
   <style>
     /* Loader styles commented out for now. Re-enable when restoring the page loader.
        Original loader CSS was removed to simplify debugging and layout testing.
@@ -30,21 +31,7 @@
     .pw-toggle svg { display: block; }
     .pw-toggle { line-height: 1; }
   </style>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#E11D48',
-            dark: '#0F172A',
-          },
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          },
-        },
-      },
-    };
-  </script>
+  <!-- If you need to customize Tailwind's theme, edit `tailwind.config.cjs` and rebuild CSS. -->
 
   <!-- Preload critical resources -->
   <link rel="preload" href="{{ url_for('static', filename='images/logo_2.png') }}" as="image">
