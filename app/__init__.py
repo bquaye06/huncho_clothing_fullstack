@@ -29,10 +29,14 @@ def create_app():
     
     # Flask configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-        'DATABASE_URL',
-        'postgresql+pg8000://postgres:Benedicta%4022@172.29.176.1/huncho_clothing'
-    )
+    # Read DATABASE_URL from environment and strip whitespace/newlines that
+    # may be accidentally injected when copying values (common with CI/GUI).
+    raw_db = os.getenv('DATABASE_URL')
+    if raw_db and isinstance(raw_db, str):
+        db_uri = raw_db.strip()
+    else:
+        db_uri = 'postgresql+pg8000://postgres:Benedicta%4022@172.29.176.1/huncho_clothing'
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Mail Configuration
