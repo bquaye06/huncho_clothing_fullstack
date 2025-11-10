@@ -325,6 +325,42 @@
         try { return createToast(message, type, opts); } catch(e) { console.error('showToast error', e); }
       };
     })();
+
+    // Global fetch wrapper: detect 429 Too Many Requests and show a user-facing toast.
+    // This keeps user feedback consistent across all AJAX interactions without
+    // needing to change every fetch call site. It is resilient: attempts to read
+    // server JSON for a helpful message, falls back to a default, and respects
+    // browsers without fetch support.
+    (function(){
+      if (!window.fetch) return;
+      const _fetch = window.fetch.bind(window);
+      window.fetch = async function(...args){
+        try{
+          const resp = await _fetch(...args);
+          if (resp && resp.status === 429){
+            // Default message
+            let msg = 'Too many requests — please wait before trying again.';
+            try{
+              // clone response so we don't consume original stream used by callers
+              const clone = resp.clone();
+              const json = await clone.json().catch(()=>null);
+              if (json){
+                if (json.message) msg = json.message;
+                else if (json.error) msg = json.error;
+              } else {
+                const retry = resp.headers.get('Retry-After');
+                if (retry) msg += ' Retry after ' + retry + ' seconds.';
+              }
+            }catch(e){ /* ignore parse errors */ }
+            try { window.showToast(msg, 'error', { duration: 6000 }); } catch(e){}
+          }
+          return resp;
+        }catch(err){
+          // network error; rethrow so existing callers can handle it
+          return Promise.reject(err);
+        }
+      };
+    })();
     
     // Update navbar auth link when user is logged in (client-side detection)
     (function(){
