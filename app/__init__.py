@@ -11,6 +11,8 @@ from flask_limiter.errors import RateLimitExceeded
 from werkzeug.exceptions import HTTPException
 from dotenv import load_dotenv
 import os
+import sqlalchemy.exc as sa_exc
+from flask import request, jsonify, current_app
 
 # Load environment variables from .env file
 load_dotenv()
@@ -138,6 +140,24 @@ def create_app():
     app.register_blueprint(wishlist_bp, url_prefix='/wishlist')
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
+    # Global error handler for database connectivity issues. When the DB is
+    # temporarily unreachable (for example when using an ephemeral tunnel like
+    # ngrok or the managed DB is down), return a friendly 503 response instead
+    # of exposing an internal 500 stacktrace to the client.
+    @app.errorhandler(sa_exc.InterfaceError)
+    @app.errorhandler(sa_exc.OperationalError)
+    def handle_db_unavailable(err):
+        try:
+            current_app.logger.error('Database connection error: %s', err)
+        except Exception:
+            pass
+        # If the client expects JSON, return a JSON payload.
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({'error': 'Database unavailable. Please try again later.'}), 503
+        # Otherwise return a simple HTML response. Keep it minimal to avoid
+        # depending on additional templates which may themselves query the DB.
+        html = '<h1>Service temporarily unavailable</h1><p>The database is currently unreachable. Please try again later.</p>'
+        return html, 503
     # Custom handler for rate limit exceeded — return consistent JSON for 429 responses.
     @app.errorhandler(RateLimitExceeded)
     def ratelimit_handler(e):
