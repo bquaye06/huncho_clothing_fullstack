@@ -7,61 +7,6 @@
 
   <!-- TailwindCSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Defensive overrides: restore core layout if an external stylesheet overrides Tailwind or global rules -->
-  <style>
-    /* Ensure document uses flex column layout expected by templates */
-    html, body {
-      height: 100% !important;
-      min-height: 100% !important;
-      display: flex !important;
-      flex-direction: column !important;
-    }
-    /* Body classes used by templates: force baseline text and background */
-    body {
-      margin: 0 !important;
-      background-color: #F8FAFC !important; /* tailwind bg-gray-50 */
-      color: #1F2937 !important; /* tailwind text-gray-800 */
-      font-family: Inter, sans-serif !important;
-      -webkit-font-smoothing: antialiased !important;
-      -moz-osx-font-smoothing: grayscale !important;
-    }
-
-    /* Constrain central content containers and keep them centered */
-    header .max-w-6xl,
-    footer .max-w-6xl {
-      max-width: 72rem !important; /* keep layout width */
-      margin-left: auto !important;
-      margin-right: auto !important;
-      padding-left: 1rem !important;
-      padding-right: 1rem !important;
-    }
-
-    /* Main should grow to fill available space and center its content */
-    main {
-      flex: 1 1 auto !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      padding-top: 3rem !important;
-      padding-bottom: 3rem !important;
-    }
-
-    /* Defensive utility fixes: ensure common utility classes behave as expected
-       (these neutralize some external CSS that may globally change display types) */
-    .hidden { display: none !important; }
-    .flex { display: flex !important; }
-    .inline-flex { display: inline-flex !important; }
-    .absolute { position: absolute !important; }
-    .relative { position: relative !important; }
-
-    /* Cart drawer & overlays: ensure they remain positioned on top-right */
-    #cart-overlay { inset: 0 !important; }
-    #cart-drawer { right: 0 !important; left: auto !important; }
-
-    /* Small-screen helpers: ensure the centered logo stays centered */
-    .absolute.left-1\/2 { left: 50% !important; }
-    .transform.-translate-x-1\/2 { transform: translateX(-50%) !important; }
-  </style>
   <style>
     /* Loader styles commented out for now. Re-enable when restoring the page loader.
        Original loader CSS was removed to simplify debugging and layout testing.
@@ -85,21 +30,7 @@
     .pw-toggle svg { display: block; }
     .pw-toggle { line-height: 1; }
   </style>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#E11D48',
-            dark: '#0F172A',
-          },
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          },
-        },
-      },
-    };
-  </script>
+  <!-- If you need to customize Tailwind's theme, edit `tailwind.config.cjs` and rebuild CSS. -->
 
   <!-- Preload critical resources -->
   <link rel="preload" href="{{ url_for('static', filename='images/logo_2.png') }}" as="image">
@@ -378,6 +309,42 @@
       // expose a global helper
       window.showToast = function(message, type = 'info', opts = {}) {
         try { return createToast(message, type, opts); } catch(e) { console.error('showToast error', e); }
+      };
+    })();
+
+    // Global fetch wrapper: detect 429 Too Many Requests and show a user-facing toast.
+    // This keeps user feedback consistent across all AJAX interactions without
+    // needing to change every fetch call site. It is resilient: attempts to read
+    // server JSON for a helpful message, falls back to a default, and respects
+    // browsers without fetch support.
+    (function(){
+      if (!window.fetch) return;
+      const _fetch = window.fetch.bind(window);
+      window.fetch = async function(...args){
+        try{
+          const resp = await _fetch(...args);
+          if (resp && resp.status === 429){
+            // Default message
+            let msg = 'Too many requests — please wait before trying again.';
+            try{
+              // clone response so we don't consume original stream used by callers
+              const clone = resp.clone();
+              const json = await clone.json().catch(()=>null);
+              if (json){
+                if (json.message) msg = json.message;
+                else if (json.error) msg = json.error;
+              } else {
+                const retry = resp.headers.get('Retry-After');
+                if (retry) msg += ' Retry after ' + retry + ' seconds.';
+              }
+            }catch(e){ /* ignore parse errors */ }
+            try { window.showToast(msg, 'error', { duration: 6000 }); } catch(e){}
+          }
+          return resp;
+        }catch(err){
+          // network error; rethrow so existing callers can handle it
+          return Promise.reject(err);
+        }
       };
     })();
     

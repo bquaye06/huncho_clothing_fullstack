@@ -1,0 +1,29 @@
+/* Placeholder tailwind.css
+   This file is a small placeholder so the site doesn't 404 while you
+   build the full Tailwind CSS bundle during deployment.
+
+   To generate the production CSS with Tailwind, run from the repo root:
+     npm install
+     npm run build:css
+
+   After building, replace this file with the generated file at
+   ./app/static/css/tailwind.css (the build script already outputs there).
+*/
+
+/* Minimal fallback styles (keeps layout readable until full build is done) */
+:root{--color-primary:#E11D48;--color-dark:#0F172A}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,'Noto Sans','Liberation Sans',sans-serif;background:#f8fafc;color:#0f172a}
+img{max-width:100%;height:auto}
+.hidden{display:none !important}
+.flex{display:flex}
+.items-center{align-items:center}
+.justify-center{justify-content:center}
+.text-primary{color:var(--color-primary)}
+.bg-white{background:#fff}
+.border{border:1px solid rgba(0,0,0,0.08)}
+.p-4{padding:1rem}
+.m-4{margin:1rem}
+.rounded{border-radius:0.25rem}
+.container{max-width:1200px;margin-left:auto;margin-right:auto;padding-left:1rem;padding-right:1rem}
+
+/* End placeholder */

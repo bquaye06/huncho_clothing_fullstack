@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -7,6 +7,8 @@ from authlib.integrations.flask_client import OAuth
 from datetime import datetime, timedelta
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_limiter.errors import RateLimitExceeded
+from werkzeug.exceptions import HTTPException
 from dotenv import load_dotenv
 import os
 
@@ -28,10 +30,14 @@ def create_app():
     
     # Flask configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-        'DATABASE_URL',
-        'postgresql+pg8000://postgres:Benedicta%4022@172.29.176.1/huncho_clothing'
-    )
+    # Read DATABASE_URL from environment and strip whitespace/newlines that
+    # may be accidentally injected when copying values (common with CI/GUI).
+    raw_db = os.getenv('DATABASE_URL')
+    if raw_db and isinstance(raw_db, str):
+        db_uri = raw_db.strip()
+    else:
+        db_uri = 'postgresql+pg8000://postgres:Benedicta%4022@172.29.176.1/huncho_clothing'
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Mail Configuration
@@ -131,6 +137,42 @@ def create_app():
     app.register_blueprint(checkout_bp, url_prefix='/checkout')
     app.register_blueprint(wishlist_bp, url_prefix='/wishlist')
     app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    # Custom handler for rate limit exceeded — return consistent JSON for 429 responses.
+    @app.errorhandler(RateLimitExceeded)
+    def ratelimit_handler(e):
+        try:
+            return app.response_class(
+                response=jsonify({
+                    'error': 'Too many requests',
+                    'message': 'Please wait before trying again.'
+                }).get_data(as_text=True),
+                status=429,
+                mimetype='application/json'
+            )
+        except Exception:
+            # Fallback simple response if jsonify fails for any reason
+            return jsonify({
+                'error': 'Too many requests',
+                'message': 'Please wait before trying again.'
+            }), 429
+
+    # Generic error handler to ensure the app returns JSON for unexpected errors
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(e):
+        # Do not convert HTTPExceptions (404, 401, etc.) into 500 responses.
+        if isinstance(e, HTTPException):
+            return e
+        # Log full traceback to the app logger so it's available in Render logs
+        try:
+            app.logger.exception('Unhandled exception: %s', e)
+        except Exception:
+            pass
+        # Return a generic JSON response — avoid leaking internal details in prod
+        return jsonify({
+            'error': 'Internal server error',
+            'message': 'An unexpected error occurred. Please try again later.'
+        }), 500
 
 
     return app
