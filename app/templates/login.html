@@ -3,6 +3,24 @@
 
 {% block content %}
 
+<!-- Defensive fixes for submit button visibility (some external CSS may set buttons transparent) -->
+<style>
+  /* Ensure the primary submit button is always visible */
+  #loginForm button[type="submit"] {
+    opacity: 1 !important;
+    background-color: #E11D48 !important; /* primary */
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.04) !important;
+    z-index: 2 !important;
+  }
+  /* Make sure hover state is consistent */
+  #loginForm button[type="submit"]:hover {
+    background-color: #dc163f !important; /* slightly darker */
+    opacity: 1 !important;
+  }
+</style>
+
 <!-- Modern split sign-in layout inspired by reference -->
 <div class="w-full max-w-6xl bg-transparent rounded-lg p-4">
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
