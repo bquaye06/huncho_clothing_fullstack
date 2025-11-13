@@ -7,6 +7,61 @@
 
   <!-- TailwindCSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Defensive overrides: restore core layout if an external stylesheet overrides Tailwind or global rules -->
+  <style>
+    /* Ensure document uses flex column layout expected by templates */
+    html, body {
+      height: 100% !important;
+      min-height: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    /* Body classes used by templates: force baseline text and background */
+    body {
+      margin: 0 !important;
+      background-color: #F8FAFC !important; /* tailwind bg-gray-50 */
+      color: #1F2937 !important; /* tailwind text-gray-800 */
+      font-family: Inter, sans-serif !important;
+      -webkit-font-smoothing: antialiased !important;
+      -moz-osx-font-smoothing: grayscale !important;
+    }
+
+    /* Constrain central content containers and keep them centered */
+    header .max-w-6xl,
+    footer .max-w-6xl {
+      max-width: 72rem !important; /* keep layout width */
+      margin-left: auto !important;
+      margin-right: auto !important;
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    /* Main should grow to fill available space and center its content */
+    main {
+      flex: 1 1 auto !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding-top: 3rem !important;
+      padding-bottom: 3rem !important;
+    }
+
+    /* Defensive utility fixes: ensure common utility classes behave as expected
+       (these neutralize some external CSS that may globally change display types) */
+    .hidden { display: none !important; }
+    .flex { display: flex !important; }
+    .inline-flex { display: inline-flex !important; }
+    .absolute { position: absolute !important; }
+    .relative { position: relative !important; }
+
+    /* Cart drawer & overlays: ensure they remain positioned on top-right */
+    #cart-overlay { inset: 0 !important; }
+    #cart-drawer { right: 0 !important; left: auto !important; }
+
+    /* Small-screen helpers: ensure the centered logo stays centered */
+    .absolute.left-1\/2 { left: 50% !important; }
+    .transform.-translate-x-1\/2 { transform: translateX(-50%) !important; }
+  </style>
   <style>
     /* Loader styles commented out for now. Re-enable when restoring the page loader.
        Original loader CSS was removed to simplify debugging and layout testing.
